@@ -79,7 +79,7 @@ void auto_Isolation(void) {
   // Optional wait to allow for calibration
   wait(1,sec);
   // Finds and moves robot to position of closest green triball
-  
+  Intake.spin(fwd);
   rightDrive.setVelocity(100, pct);
   leftDrive.setVelocity(100, pct);
 
