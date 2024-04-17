@@ -2,12 +2,12 @@ using namespace vex;
 
 extern brain Brain;
 
-extern motor leftDrive;
-extern motor rightDrive;
+extern motor_group leftDrive;
+extern motor_group rightDrive;
 extern gps GPS;
 extern smartdrive Drivetrain;
 extern motor Arm;
-extern motor Intake;
+extern motor_group Intake;
 extern controller Controller;
 
 /**

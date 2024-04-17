@@ -15,12 +15,26 @@ using namespace vex;
 
 brain Brain;
 // Robot configuration code.
-motor leftDrive = motor(PORT1, ratio18_1, false);
-motor rightDrive = motor(PORT2, ratio18_1, true);
-gps GPS = gps(PORT18, 17, 14, distanceUnits::cm, 90.0, turnType::right);
-smartdrive Drivetrain = smartdrive(leftDrive, rightDrive, GPS, 319.19, 320, 40, mm, 1);
+motor left1 = motor(PORT13, ratio6_1, false);
+motor left2 = motor(PORT8, ratio6_1, true);
+motor left3 = motor(PORT11, ratio6_1, true);
+motor left4 = motor(PORT7, ratio6_1, false);
+
+motor right1 = motor(PORT20, ratio6_1, true);
+motor right2 = motor(PORT16, ratio6_1, true);
+motor right3 = motor(PORT12, ratio6_1, false);
+motor right4 = motor(PORT10, ratio6_1, false);
+
+motor_group leftDrive = motor_group(left1, left2, left3, left4);
+motor_group rightDrive = motor_group(right1, right2, right3, right4);
+
+gps GPS = gps(PORT1, 0, 0, distanceUnits::in, 0, turnType::right);
+smartdrive Drivetrain = smartdrive(leftDrive, rightDrive, GPS, 319.19, 320, 40, mm, 0.6);
 motor Arm = motor(PORT3, ratio18_1, false);
-motor Intake = motor(PORT8, ratio18_1, false);
+
+motor IntakeRight = motor(PORT5, ratio18_1, true);
+motor IntakeLeft = motor(PORT6, ratio18_1, false);
+motor_group Intake = motor_group(IntakeRight, IntakeLeft);
 
 
 // A global instance of competition
@@ -65,15 +79,23 @@ void auto_Isolation(void) {
   // Optional wait to allow for calibration
   wait(1,sec);
   // Finds and moves robot to position of closest green triball
-  getObject();
+  
+  rightDrive.setVelocity(100, pct);
+  leftDrive.setVelocity(100, pct);
+
+  wait(100, seconds);
+  //getObject();
   // Intakes the ball
+  /*
   double rot = Arm.position(rotationUnits::deg);
   intake(rot - 100, 1);
+  
   // Moves to position in front of blue goal
   wait(1,sec);
   goToGoal(0);
   // Scores tri-ball in blue goal
-  dump(rot);
+  dump(0);
+  */
 
 }
 
@@ -121,6 +143,12 @@ void autonomousMain(void) {
   firstAutoFlag = false;
 }
 
+void usercontrol(void) {
+  while (true) {
+    wait(4, timeUnits::msec);
+  }
+}
+
 int main() {
 
   // local storage for latest data from the Jetson Nano
@@ -134,6 +162,7 @@ int main() {
 
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(autonomousMain);
+  Competition.drivercontrol(usercontrol);
 
   // print through the controller to the terminal (vexos 1.0.12 is needed)
   // As USB is tied up with Jetson communications we cannot use
@@ -143,9 +172,6 @@ int main() {
   //
   //FILE *fp = fopen("/dev/serial2","wb");
   this_thread::sleep_for(loop_time);
-
-  Arm.setStopping(hold);
-  Arm.setVelocity(60, percent);
 
   while(1) {
       // get last map data
