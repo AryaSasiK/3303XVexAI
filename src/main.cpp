@@ -162,7 +162,6 @@ int main() {
 
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(autonomousMain);
-  Competition.drivercontrol(usercontrol);
 
   // print through the controller to the terminal (vexos 1.0.12 is needed)
   // As USB is tied up with Jetson communications we cannot use
