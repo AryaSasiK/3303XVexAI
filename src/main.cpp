@@ -14,7 +14,28 @@ using namespace vex;
 // A global instance of competition
 competition Competition;
 
-// define your global instances of motors and other devices here
+brain Brain;
+// Robot configuration code.
+motor left1 = motor(PORT13, ratio6_1, false);
+motor left2 = motor(PORT8, ratio6_1, true);
+motor left3 = motor(PORT11, ratio6_1, true);
+motor left4 = motor(PORT7, ratio6_1, false);
+
+motor right1 = motor(PORT20, ratio6_1, true);
+motor right2 = motor(PORT16, ratio6_1, true);
+motor right3 = motor(PORT12, ratio6_1, false);
+motor right4 = motor(PORT10, ratio6_1, false);
+
+motor_group leftDrive = motor_group(left1, left2, left3, left4);
+motor_group rightDrive = motor_group(right1, right2, right3, right4);
+
+gps GPS = gps(PORT1, 0, 0, distanceUnits::in, 0, turnType::right);
+smartdrive Drivetrain = smartdrive(leftDrive, rightDrive, GPS, 319.19, 320, 40, mm, 0.6);
+motor Arm = motor(PORT3, ratio18_1, false);
+
+motor IntakeRight = motor(PORT5, ratio18_1, true);
+motor IntakeLeft = motor(PORT6, ratio18_1, false);
+motor_group Intake = motor_group(IntakeRight, IntakeLeft);
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -46,6 +67,11 @@ void autonomous(void) {
   // ..........................................................................
   // Insert autonomous user code here.
   // ..........................................................................
+  Intake.setVelocity(100, pct); 
+  Brain.Screen.print("Code is running");
+  Drivetrain.setDriveVelocity(100, pct);
+  Drivetrain.drive(fwd);
+  wait(10, sec);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -69,7 +95,8 @@ void usercontrol(void) {
     // Insert user code here. This is where you use the joystick values to
     // update your motors, etc.
     // ........................................................................
-
+    leftDrive.spin(fwd);
+  rightDrive.spin(fwd);
     wait(20, msec); // Sleep the task for a short amount of time to
                     // prevent wasted resources.
   }
