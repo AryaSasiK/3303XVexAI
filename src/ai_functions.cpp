@@ -156,7 +156,7 @@ DETECTION_OBJECT findTarget(int type){
 }
 
 // Function to retrieve an object based on detection
-void getObject(){
+void getObject() {
     DETECTION_OBJECT target = findTarget(0);
     // If no target found, turn and try to find again
     if (target.mapLocation.x == 0 && target.mapLocation.y == 0){

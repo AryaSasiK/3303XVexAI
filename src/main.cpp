@@ -28,7 +28,7 @@ motor right4 = motor(PORT10, ratio6_1, false);
 motor_group leftDrive = motor_group(left1, left2, left3, left4);
 motor_group rightDrive = motor_group(right1, right2, right3, right4);
 
-gps GPS = gps(PORT1, 0, 0, distanceUnits::in, 0, turnType::right);
+gps GPS = gps(PORT1, 0, 0, distanceUnits::in, 90, turnType::right);
 smartdrive Drivetrain = smartdrive(leftDrive, rightDrive, GPS, 319.19, 320, 40, mm, 0.6);
 motor Arm = motor(PORT3, ratio18_1, false);
 
@@ -74,28 +74,24 @@ ai::robot_link       link( PORT11, "robot_32456_1", linkType::worker );
 /*---------------------------------------------------------------------------*/
 
 void auto_Isolation(void) {
-  Brain.Screen.print("VEX AI Code Isolation AUton Running... \n");
+  Brain.Screen.print("VEX AI Code Isolation Auton Running... \n");
   // Calibrate GPS Sensor
   GPS.calibrate();
   // Optional wait to allow for calibration
-  wait(100,seconds);
+  wait(1,seconds);
   // Finds and moves robot to position of closest green triball
-  Intake.setVelocity(100, pct);
-  Intake.spin(fwd);
+  getObject();
 
-  wait(10, seconds);
-  //getObject();
   // Intakes the ball
-  /*
-  double rot = Arm.position(rotationUnits::deg);
-  intake(rot - 100, 1);
+  
+  intake(200, 1);
   
   // Moves to position in front of blue goal
   wait(1,sec);
   goToGoal(0);
   // Scores tri-ball in blue goal
   dump(0);
-  */
+  
 
 }
 
