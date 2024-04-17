@@ -68,9 +68,9 @@ void autonomous(void) {
   // Insert autonomous user code here.
   // ..........................................................................
   Intake.setVelocity(100, pct); 
-  Brain.Screen.print("Code is running");
+  Brain.Screen.print("Code is running (no ai)");
   Drivetrain.setDriveVelocity(100, pct);
-  Drivetrain.drive(fwd);
+  //Drivetrain.drive(fwd);
   wait(10, sec);
 }
 
