@@ -74,6 +74,7 @@ ai::robot_link       link( PORT11, "robot_32456_1", linkType::worker );
 /*---------------------------------------------------------------------------*/
 
 void auto_Isolation(void) {
+  Brain.Screen.print("VEX AI Code Isolation AUton Running... \n");
   // Calibrate GPS Sensor
   GPS.calibrate();
   // Optional wait to allow for calibration
