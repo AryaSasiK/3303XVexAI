@@ -77,13 +77,12 @@ void auto_Isolation(void) {
   // Calibrate GPS Sensor
   GPS.calibrate();
   // Optional wait to allow for calibration
-  wait(1,sec);
+  wait(100,seconds);
   // Finds and moves robot to position of closest green triball
+  Intake.setVelocity(100, pct);
   Intake.spin(fwd);
-  rightDrive.setVelocity(100, pct);
-  leftDrive.setVelocity(100, pct);
 
-  wait(100, seconds);
+  wait(10, seconds);
   //getObject();
   // Intakes the ball
   /*
