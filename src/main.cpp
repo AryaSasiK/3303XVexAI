@@ -7,44 +7,38 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-// ---- START VEXCODE CONFIGURED DEVICES ----
-// ---- END VEXCODE CONFIGURED DEVICES ----
 #include "ai_functions.h"
+#include "vex.h"
 
 using namespace vex;
 
+// ---- START CONFIGURED DEVICES ----
 brain Brain;
-// Robot configuration code.
-motor left1 = motor(PORT13, ratio6_1, false);
-motor left2 = motor(PORT8, ratio6_1, true);
-motor left3 = motor(PORT11, ratio6_1, true);
-motor left4 = motor(PORT7, ratio6_1, false);
-
-motor right1 = motor(PORT20, ratio6_1, true);
-motor right2 = motor(PORT16, ratio6_1, true);
-motor right3 = motor(PORT12, ratio6_1, false);
-motor right4 = motor(PORT10, ratio6_1, false);
-
-motor_group leftDrive = motor_group(left1, left2, left3, left4);
-motor_group rightDrive = motor_group(right1, right2, right3, right4);
-
-gps GPS = gps(PORT1, 0, 0, distanceUnits::in, 90, turnType::right);
-smartdrive Drivetrain = smartdrive(leftDrive, rightDrive, GPS, 319.19, 320, 40, mm, 0.6);
-motor Arm = motor(PORT3, ratio18_1, false);
-
-motor IntakeRight = motor(PORT5, ratio18_1, true);
-motor IntakeLeft = motor(PORT6, ratio18_1, false);
-motor_group Intake = motor_group(IntakeRight, IntakeLeft);
-
+controller Controller1 = controller(primary);
+motor leftDriveA = motor(PORT8, ratio6_1, true);  
+motor leftDriveB = motor(PORT11, ratio6_1, true);   
+motor leftDriveC = motor(PORT7, ratio6_1, false);   
+motor leftDriveD = motor(PORT13, ratio6_1, false);   
+//Right Motors 
+motor rightDriveA = motor(PORT10, ratio6_1, false);
+motor rightDriveB = motor(PORT12, ratio6_1, false);
+motor rightDriveC = motor(PORT20, ratio6_1, true);
+motor rightDriveD = motor(PORT16, ratio6_1, true);
+motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
+motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
+const int32_t InertialPort = PORT15;
+Drive Chassis(ZERO_TRACKER_NO_ODOM,LeftDriveSmart,RightDriveSmart,InertialPort,3.125,0.6,360,PORT1,-PORT2,PORT3,-PORT4,3,2.75,-2,1,-2.75,5.5);
+gps GPS = gps(PORT9, 0.0, -160, mm, 180);
+motor IntakeA = motor(PORT6, ratio6_1, false);
+motor IntakeB = motor(PORT5, ratio6_1, true);
+motor_group Intake = motor_group(IntakeA, IntakeB);
+optical Balldetect = optical(PORT17);
 
 // A global instance of competition
 competition Competition;
-
 // create instance of jetson class to receive location and other
 // data from the Jetson nano
-//
 ai::jetson  jetson_comms;
-
 /*----------------------------------------------------------------------------*/
 // Create a robot_link on PORT1 using the unique name robot_32456_1
 // The unique name should probably incorporate the team number
@@ -63,6 +57,95 @@ ai::robot_link       link( PORT11, "robot_32456_1", linkType::manager );
 ai::robot_link       link( PORT11, "robot_32456_1", linkType::worker );
 #endif
 
+// ---- END CONFIGURED DEVICES ----
+
+void tuned_constants()
+{
+  
+  Chassis.set_drive_constants(12, 1.5, 0, 10, 0);
+  Chassis.set_heading_constants(6, .4, 0, 1, 0);
+  Chassis.set_turn_constants(12, 0.25, 0.0005, 1.25, 15);//Tuned
+  Chassis.set_swing_constants(12, .3, .001, 2, 15);
+  Chassis.set_drive_exit_conditions(1.5, 300, 5000);
+  Chassis.set_turn_exit_conditions(1, 300, 3000);
+  Chassis.set_swing_exit_conditions(1, 300, 3000);
+}
+
+
+
+void pre_auton(void) 
+{
+  initialize_field();
+  tuned_constants();
+  Brain.Screen.clearScreen();
+  Brain.Screen.print("Device initialization...");
+  Brain.Screen.setCursor(2, 1);
+  // calibrate the drivetrain Inertial
+  Balldetect.setLight(vex::ledState::on);
+  Chassis.Gyro.calibrate();
+  Brain.Screen.print("Calibrating Inertial for Chassis");
+  Brain.Screen.setCursor(3, 1);
+  // wait for the Inertial calibration process to finish
+  while (Chassis.Gyro.isCalibrating()) 
+  {
+    wait(25, msec);
+  }
+  GPS.calibrate();
+  Brain.Screen.print("Calibrating GPS for VEX AI");
+  while (GPS.isCalibrating()) 
+  {
+    wait(25, msec);
+  }
+  // reset the screen now that the calibration is complete
+  Brain.Screen.clearScreen();
+  Brain.Screen.setCursor(1,1);
+
+  wait(50, msec);
+  Brain.Screen.clearScreen();
+}
+
+bool Controller1LeftShoulderControlMotorsStopped = true;
+void usercontrol(void) 
+{
+  Intake.setVelocity(100,pct);
+  while(1)
+  {
+    Chassis.control_arcade();
+
+    if (Controller1.ButtonL1.pressing()) 
+    {
+      Intake.spin(fwd);
+      Controller1LeftShoulderControlMotorsStopped = false;
+    } 
+    else if (Controller1.ButtonL2.pressing()) 
+    {
+      Intake.spin(reverse);
+      Controller1LeftShoulderControlMotorsStopped = false;
+    } 
+    else if (!Controller1LeftShoulderControlMotorsStopped) 
+    {
+      Intake.stop();
+      Controller1LeftShoulderControlMotorsStopped = true;
+    }
+    wait(20,msec);
+  }
+}
+
+void testing_tuning(void)
+{
+  getObject(0);
+ 
+ 
+ 
+ 
+  //moveToPosition(-67,-85,45,100,80,false);
+  //turnTo(287,100,false);-
+
+
+  
+  //fprintf(fp,"\n\n\n\nTesting Data || Voltage:%.2f Angle:%.2f\n",voltage,angle);
+}
+
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                          Auto_Isolation Task                              */
@@ -73,25 +156,8 @@ ai::robot_link       link( PORT11, "robot_32456_1", linkType::worker );
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
 
-void auto_Isolation(void) {
-  Brain.Screen.print("VEX AI Code Isolation Auton Running... \n");
-  // Calibrate GPS Sensor
-  GPS.calibrate();
-  // Optional wait to allow for calibration
-  wait(1,seconds);
-  // Finds and moves robot to position of closest green triball
-  getObject();
-
-  // Intakes the ball
-  
-  intake(200, 1);
-  
-  // Moves to position in front of blue goal
-  wait(1,sec);
-  goToGoal(0);
-  // Scores tri-ball in blue goal
-  dump(0);
-  
+void auto_Isolation(void) 
+{
 
 }
 
@@ -106,11 +172,10 @@ void auto_Isolation(void) {
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
 
-
-void auto_Interaction(void) {
+void auto_Interaction(void) 
+{
   // Functions needed: evaluate which ball detected is target, go to target (x,y), intake ball, dump ball, 
 }
-
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -122,8 +187,8 @@ void auto_Interaction(void) {
 /*---------------------------------------------------------------------------*/
 
 bool firstAutoFlag = true;
-
-void autonomousMain(void) {
+void autonomousMain(void) 
+{
   // ..........................................................................
   // The first time we enter this function we will launch our Isolation routine
   // When the field goes disabled after the isolation period this task will die
@@ -139,12 +204,6 @@ void autonomousMain(void) {
   firstAutoFlag = false;
 }
 
-void usercontrol(void) {
-  while (true) {
-    wait(4, timeUnits::msec);
-  }
-}
-
 int main() {
 
   // local storage for latest data from the Jetson Nano
@@ -155,10 +214,12 @@ int main() {
 
   // start the status update display
   thread t1(dashboardTask);
-
+  pre_auton(); 
   // Set up callbacks for autonomous and driver control periods.
-  Competition.autonomous(autonomousMain);
-
+  Competition.autonomous(testing_tuning);
+  //Competition.autonomous(autonomousMain);
+  Competition.drivercontrol(usercontrol);
+  
   // print through the controller to the terminal (vexos 1.0.12 is needed)
   // As USB is tied up with Jetson communications we cannot use
   // printf for debug.  If the controller is connected
@@ -167,16 +228,22 @@ int main() {
   //
   //FILE *fp = fopen("/dev/serial2","wb");
   this_thread::sleep_for(loop_time);
-
-  while(1) {
+  int counter = 0 ;
+  while(1) 
+  {
       // get last map data
       jetson_comms.get_data( &local_map );
 
       // set our location to be sent to partner robot
       link.set_remote_location( local_map.pos.x, local_map.pos.y, local_map.pos.az, local_map.pos.status );
 
-      // fprintf(fp, "%.2f %.2f %.2f\n", local_map.pos.x, local_map.pos.y, local_map.pos.az)
-
+      //fprintf(fp, "%.2f %.3f %.2f\n", local_map.pos.x, local_map.pos.y, local_map.pos.az);
+      counter += 1 ;
+      if (counter > 15)
+      {
+        //fprintf(fp,"\n\n\n\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
+        counter = 0 ;
+      }
       // request new data    
       // NOTE: This request should only happen in a single task.    
       jetson_comms.request_map();
