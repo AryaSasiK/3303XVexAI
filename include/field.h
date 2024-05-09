@@ -4,6 +4,7 @@
 #include "vex.h"
 #include <robot-config.h>
 
+
 using namespace std;
 
 
@@ -36,7 +37,10 @@ class Line
             LinePoints[0] = &A;
             LinePoints[1] = &B;
         }
-        ~Line(){}
+        ~Line()
+        {
+
+        }
 
 };
 
@@ -60,20 +64,14 @@ class Path
 {
     public: 
         std::vector<Point*> PathPoints;
-        std::vector<Line*> PathLines;
-        Path(std::initializer_list<Point> PointsList)
+        Path(){}
+        Path(std::initializer_list<Point> PointsList) : Path()
         {
             for (auto List : PointsList) 
             {
                 PathPoints.push_back(&List);
             }
-            for(int i = 0; i < (PathPoints.size() - 1); i++)
-            {
-                Line* newLine = new Line();
-                newLine->LinePoints[0] = PathPoints[i];
-                newLine->LinePoints[1] = PathPoints[i+1];
-                PathLines.push_back(newLine);
-            }
+           
         }
         ~Path(){}
        
@@ -83,14 +81,17 @@ class Field
 {
     private:
         const Path* Snap_Path ;
+        std::vector<Line> Snap_Path_Lines;
         vector<Barrier*> Field_Barriers;
         
     public:
         Field(enum::Color Alliance);
         Color Side;
-        bool Check_Barrier_Intersects();
-        Point Find_Point_on_Path();
-        Path Create_Path_to_Target();
+        pair <Point*, double> Find_Closest_Point_In_Line(Point* point, Line LineSeg);
+        bool Check_Barrier_Intersects(Point* CurrentPos, Point* PointOnLine);
+        pair<Point*,int> Find_Point_on_Path(Point* Target);
+        Path Create_Path_to_Target(Point* Target);
+
 
 };
 

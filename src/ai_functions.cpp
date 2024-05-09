@@ -85,33 +85,67 @@ void turnTo(double angle, int speed = 75, bool frontfacing = true)
         Chassis.turn_to_angle(180+angle,voltage);
      
 }
+void moveToPoint(Point* Target, int Dspeed = 75, int Tspeed = 75, bool frontfacing = true)
+{
+    float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), Target->Xcord, Target->Ycord);
+    turnTo(intialHeading,Tspeed,frontfacing);
+    float distance = distanceTo(Target->Xcord, Target->Ycord);
+    float voltage = (Dspeed*.12) ; 
+    if (frontfacing)
+    {
+        Chassis.drive_distance(distance,intialHeading,voltage,voltage);
+    }
+    else
+    {
+        Chassis.drive_distance(-distance,180+intialHeading,voltage,voltage);
+    }
 
+}
 // Method that moves to a given (x,y) position and a desired target theta to finish movement facing in cm 
 void moveToPosition(double target_x, double target_y, double target_theta = -1, int Dspeed = 75, int Tspeed = 75, bool frontfacing = true) 
 {
     
     float targetThreshold = 7; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
-    bool arrivedtoTarget = false; 
-    //while(!arrivedtoTarget){
-
-    float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), target_x, target_y);
-    turnTo(intialHeading,Tspeed,frontfacing);
-
-    float distance = distanceTo(target_x, target_y);
-    float voltage = (Dspeed*.12) ; 
-    if (frontfacing)
-        Chassis.drive_distance(distance,intialHeading,voltage,voltage);
-    else
-        Chassis.drive_distance(-distance,180+intialHeading,voltage,voltage);
-
-    float dist = (target_x - GPS.xPosition(distanceUnits::cm)) * (target_x - GPS.xPosition(distanceUnits::cm)) + (target_y - GPS.xPosition(distanceUnits::cm)) * (target_y - GPS.xPosition(distanceUnits::cm));
-    if (dist <= targetThreshold * targetThreshold)
-        arrivedtoTarget = true;
-    //}
-    // Turn to the final target heading if specified, otherwise use current heading
-    if (target_theta != -1)
-        turnTo(target_theta);
+    bool arrivedtoTarget = false;
+    Point Target(target_x, target_y);
+    Point CurrentPoint(GPS.xPosition(distanceUnits::cm),GPS.yPosition(distanceUnits::cm));
     
+    if(!field.Check_Barrier_Intersects(&CurrentPoint,&Target))
+    {   
+        while(!arrivedtoTarget)
+        {
+            float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), target_x, target_y);
+            turnTo(intialHeading,Tspeed,frontfacing);
+            float distance = distanceTo(target_x, target_y);
+            float voltage = (Dspeed*.12) ; 
+            if (frontfacing)
+            {
+                Chassis.drive_distance(distance,intialHeading,voltage,voltage);
+            }
+            else
+            {
+                Chassis.drive_distance(-distance,180+intialHeading,voltage,voltage);
+            }
+        
+            float dist = (target_x - GPS.xPosition(distanceUnits::cm)) * (target_x - GPS.xPosition(distanceUnits::cm)) + (target_y - GPS.xPosition(distanceUnits::cm)) * (target_y - GPS.xPosition(distanceUnits::cm));
+            if (dist <= targetThreshold * targetThreshold)
+            {
+                arrivedtoTarget = true;
+            }
+        }
+    }
+    else
+    {
+        Path Path2Target = field.Create_Path_to_Target(&Target);
+        for(int i = 0; i < Path2Target.PathPoints.size(); i++)
+        {
+            moveToPoint(Path2Target.PathPoints[i],Dspeed,Tspeed,frontfacing);
+        }
+    }
+    if (target_theta != -1)
+    {
+        turnTo(target_theta);
+    }
 }
 
 // Function to find the target object based on type and return its record
@@ -174,17 +208,5 @@ void ScoreBall()
     Chassis.drive_distance(25);
     Intake.stop(coast);
     Chassis.drive_distance(-15);
-
-    
-
-
-}
-
-void Follow_Path(Path Path2Target)
-{
-    for(int i = 0; i < Path2Target.PathPoints.size(); i++)
-    {
-        moveToPosition(Path2Target.PathPoints[i]->Xcord,Path2Target.PathPoints[i]->Ycord);
-    }
 }
 
