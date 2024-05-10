@@ -8,7 +8,6 @@
 /*----------------------------------------------------------------------------*/
 
 #include "ai_functions.h"
-#include "field.h"
 #include "vex.h"
 
 
@@ -16,7 +15,6 @@ using namespace vex;
 
 // ---- START CONFIGURED DEVICES ----
 
-Field field(Red) ;
 brain Brain;
 controller Controller1 = controller(primary);
 motor leftDriveA = motor(PORT20, ratio6_1, true);  
@@ -137,18 +135,8 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
-  getObject(0);
+  getObject();
   ScoreBall();
- 
- 
- 
- 
-
-  //turnTo(287,100,false);-
-
-
-  
-  //fprintf(fp,"\n\n\n\nTesting Data || Voltage:%.2f Angle:%.2f\n",voltage,angle);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -179,6 +167,7 @@ void auto_Isolation(void)
 
 void auto_Interaction(void) 
 {
+
   // Functions needed: evaluate which ball detected is target, go to target (x,y), intake ball, dump ball, 
 }
 

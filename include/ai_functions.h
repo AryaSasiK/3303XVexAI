@@ -21,10 +21,10 @@ float distanceTo(double target_x, double target_y,vex::distanceUnits unit);
 void moveToPosition(double target_x, double target_y, double target_theta, int Dspeed, int Tspeed, bool frontfacing);
 
 // Finds a target object based on the specified type
-DETECTION_OBJECT findTarget(int type);
+DETECTION_OBJECT findTarget();
 
 // Retrieves an object (e.g. from the ground or a dispenser)
-void getObject(int type);
+void getObject();
 
 // Turns the robot to a specific angle with given tolerance and speed
 void turnTo(double angle, int speed, bool frontfacing);

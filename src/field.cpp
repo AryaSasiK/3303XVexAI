@@ -1,15 +1,15 @@
-//#include "vex.h"
-#include "field.h"
-#include"OverUnder.h"
+#include "vex.h"
+#include "OverUnder.h"
 #include <robot-config.h>
 #include <algorithm>
+#include "field.h"
 
 using namespace OverUnder;
 
 
-Field::Field(enum::Color Alliance)
+Field::Field(vex::color Alliance_Color)
 {
-    Side = Alliance;
+    Side = Alliance_Color;
     Snap_Path = &Path2Snap2;
     for(int i = 0; i < (Snap_Path->PathPoints.size() - 1); i++)
     {
@@ -99,33 +99,48 @@ bool Field::Check_Barrier_Intersects(Point* CPos, Point* POL)
     return false;
 }
 
-bool pairCompare(const std::pair<pair<Point*, double>,int>& firstElem, const std::pair<pair<Point*, double>,int>& secondElem) 
+
+bool Field::In_Goal_Zone(double Ball_x, double Ball_y)
 {
-  return firstElem.first.second < secondElem.first.second;
+    return false;
 }
 
 
-pair<Point*,int> Field::Find_Point_on_Path(Point* freePoint)
-{
-    vector<pair<pair<Point*, double>,int>> Point_Dist_LinePos;
-    pair<Point*,int> Point_LinePos;
 
+
+
+
+
+
+
+bool pairCompare(const std::pair<Point*, double>& firstElem, const std::pair<Point*, double>& secondElem) 
+{
+  return firstElem.second < secondElem.second;
+}
+
+pair<Point*, int> Field::Find_Point_on_Path(Point* freePoint)
+{
+    vector<pair<Point*, double>> Point_Dist;
+    vector<pair<Point*, double>> Line_Pos; // This serves as a copy of the above vector
+    pair<Point*,int> Point_LinePos;
 
     for(int i = 0; i < Snap_Path_Lines.size() - 1; i++)
     {
-        pair<pair<Point*,double>,int> temp; 
-        temp.first = Find_Closest_Point_In_Line(freePoint,Snap_Path_Lines[i]);
-        temp.second = i;
-        Point_Dist_LinePos.push_back(temp);
-        //ConnectionPoints.push_back());
+        Point_Dist.push_back(Find_Closest_Point_In_Line(freePoint,Snap_Path_Lines[i]));
+        Line_Pos.push_back(Find_Closest_Point_In_Line(freePoint,Snap_Path_Lines[i]));
     }
-    std::sort(Point_Dist_LinePos.begin(),Point_Dist_LinePos.end(), pairCompare);
-    for(int j = 0; j < Point_Dist_LinePos.size(); j++)
+    std::sort(Point_Dist.begin(),Point_Dist.end(), pairCompare);
+    for(int j = 0; j < Point_Dist.size(); j++)
     {
-        if(!Check_Barrier_Intersects(freePoint,Point_Dist_LinePos[j].first.first))
+        if(!Check_Barrier_Intersects(freePoint,Point_Dist[j].first))
         {
-            Point_LinePos.first = Point_Dist_LinePos[j].first.first;
-            Point_LinePos.second = Point_Dist_LinePos[j].second;
+            Point_LinePos.first = Point_Dist[j].first;
+            for(int k = 0; k < Point_Dist.size(); k++)
+            {
+                if(Point_Dist[j].first == Line_Pos[k].first)
+                    Point_LinePos.second = k + 1;
+            }
+
             return Point_LinePos;
         }
     }
