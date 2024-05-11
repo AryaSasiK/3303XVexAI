@@ -22,6 +22,12 @@ Field::Field(vex::color Alliance_Color)
     Field_Barriers.push_back(&Center);
     Field_Barriers.push_back(&Blue_Goal);
     Field_Barriers.push_back(&Red_Goal);
+
+    Goal_Zone.push_back(&Red_BL_Corner);
+    Goal_Zone.push_back(&Red_FL_Corner);
+    Goal_Zone.push_back(&Red_FR_Corner);
+    Goal_Zone.push_back(&Red_BR_Corner);
+
 }
 
 pair <Point*, double> Field::Find_Closest_Point_In_Line(Point* point,Line LineSeg)
@@ -102,15 +108,34 @@ bool Field::Check_Barrier_Intersects(Point* CPos, Point* POL)
 
 bool Field::In_Goal_Zone(double Ball_x, double Ball_y)
 {
-    return false;
+    int num_vertices = Goal_Zone.size();
+    double x = abs(Ball_x), y = Ball_y;
+    bool inside = false;
+
+    Point* P1 = Goal_Zone[0];
+    Point* P2;
+    // Loop through each edge in the polygon
+    for (int i = 1; i <= num_vertices; i++) 
+    {
+       P2 = Goal_Zone[i % num_vertices];
+        if (y > min(P1->Ycord, P2->Ycord)) 
+        {
+            if (y <= max(P1->Ycord, P2->Ycord)) 
+            {
+                if (x <= max(P1->Xcord, P2->Xcord)) 
+                {
+                    double x_intersection = (y - P1->Ycord) * (P2->Xcord - P1->Xcord) / (P2->Ycord - P1->Ycord) + P1->Xcord;
+                    if (P1->Xcord == P2->Xcord || x <= x_intersection) 
+                    {
+                        inside = !inside;
+                    }
+                }
+            }
+        }
+        P1 = P2;
+    }
+    return inside;
 }
-
-
-
-
-
-
-
 
 
 bool pairCompare(const std::pair<Point*, double>& firstElem, const std::pair<Point*, double>& secondElem) 
@@ -202,6 +227,7 @@ Path Field::Create_Path_to_Target(Point* Target)
         }
     }
     DrivePath.PathPoints.push_back(End.first);
+    DrivePath.PathPoints.push_back(Target);
     return DrivePath ;
 
 }

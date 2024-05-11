@@ -9,7 +9,8 @@ class Point
 {
 public:
     double Xcord, Ycord;
-    Point(double X, double Y)
+    Point(){}
+    Point(double X, double Y) : Point()
     {
         Xcord = X;
         Ycord = Y;
@@ -67,8 +68,11 @@ private:
     const Path *Snap_Path;
     vector<Line> Snap_Path_Lines;
     vector<Barrier *> Field_Barriers;
+    vector<Point*> Goal_Zone;
+
 
 public:
+   
     Field(vex::color Alliance_Color);
     vex::color Side;
     pair<Point *, double> Find_Closest_Point_In_Line(Point *point, Line LineSeg);

@@ -78,11 +78,50 @@ void turnTo(double angle, int speed = 75, bool frontfacing = true)
     float voltage = (speed * 0.12);
     Chassis.set_heading(GPS.heading(deg));
     if (frontfacing)
+    {
         Chassis.turn_to_angle(angle, voltage);
+    }
     else
+    {
         Chassis.turn_to_angle(180 + angle, voltage);
+    }
 }
-void moveToPoint(Point *Target, int Dspeed = 75, int Tspeed = 75, bool frontfacing = true)
+void Print_Path(Path Path2Target)
+{
+    int Orgin, Target;
+    FILE *fp = fopen("/dev/serial2","wb");
+    int lastelem = Path2Target.PathPoints.size() - 1 ;
+    if(Path2Target.PathPoints[0]->Xcord > 0 && Path2Target.PathPoints[0]->Ycord > 0 ){Orgin = 1;}
+    else if(Path2Target.PathPoints[0]->Xcord > 0 && Path2Target.PathPoints[0]->Ycord < 0 ){Orgin = 2;}
+    else if(Path2Target.PathPoints[0]->Xcord < 0 && Path2Target.PathPoints[0]->Ycord < 0 ){Orgin = 3;}
+    else {Orgin = 4;}
+    if(Path2Target.PathPoints[lastelem]->Xcord > 0 && Path2Target.PathPoints[lastelem]->Ycord > 0 ){Target = 1;}
+    else if(Path2Target.PathPoints[lastelem]->Xcord > 0 && Path2Target.PathPoints[lastelem]->Ycord < 0 ){Orgin = 2;}
+    else if(Path2Target.PathPoints[lastelem]->Xcord < 0 && Path2Target.PathPoints[lastelem]->Ycord < 0 ){Target = 3;}
+    else {Target = 4;}
+
+    for(int i = 0; i < Path2Target.PathPoints.size(); i++)
+    {
+        if(i == 0)
+        {
+            fprintf(fp, "Path Found || (Q%d -> Q%d) Start of Path (%.2f,%.2f) -> ", Orgin, Target, Path2Target.PathPoints[i]->Xcord, Path2Target.PathPoints[i]->Ycord);
+        }
+        else if(i == Path2Target.PathPoints.size() - 1)
+        {
+            fprintf(fp, "(%.2f,%.2f) End of Path ", Path2Target.PathPoints[i]->Xcord, Path2Target.PathPoints[i]->Ycord);
+        }
+        else
+        {
+            fprintf(fp, "(%.2f,%.2f) -> ", Path2Target.PathPoints[i]->Xcord, Path2Target.PathPoints[i]->Ycord);
+
+        }
+    }
+
+    fclose(fp);
+}
+
+
+void moveToPoint(Point *Target, bool frontfacing = true, int Dspeed = 75, int Tspeed = 75)
 {
     float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), Target->Xcord, Target->Ycord);
     turnTo(intialHeading, Tspeed, frontfacing);
@@ -98,7 +137,7 @@ void moveToPoint(Point *Target, int Dspeed = 75, int Tspeed = 75, bool frontfaci
     }
 }
 // Method that moves to a given (x,y) position and a desired target theta to finish movement facing in cm
-void moveToPosition(double target_x, double target_y, double target_theta = -1, int Dspeed = 75, int Tspeed = 75, bool frontfacing = true)
+void moveToPosition(double target_x, double target_y, double target_theta = -1, bool frontfacing = true, int Dspeed = 75, int Tspeed = 75)
 {
 
     float targetThreshold = 7; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
@@ -133,6 +172,7 @@ void moveToPosition(double target_x, double target_y, double target_theta = -1, 
     else
     {
         Path Path2Target = field.Create_Path_to_Target(&Target);
+        Print_Path(Path2Target);
         for (int i = 0; i < Path2Target.PathPoints.size(); i++)
         {
             moveToPoint(Path2Target.PathPoints[i], Dspeed, Tspeed, frontfacing);
@@ -195,7 +235,6 @@ void getObject()
     DETECTION_OBJECT Triball = findTarget();
     while(!HoldingBall)
     {
-        
         while(Triball.mapLocation.x && Triball.mapLocation.y == 0)
         {
             Chassis.turn_to_angle(GPS.heading()+turn_step);
@@ -228,3 +267,4 @@ void ScoreBall()
     Intake.stop(coast);
     Chassis.drive_distance(-15);
 }
+

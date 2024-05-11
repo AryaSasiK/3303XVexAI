@@ -1,3 +1,4 @@
+#include <vector>
 #include "field.h"
 
 namespace OverUnder
@@ -82,6 +83,7 @@ Q3_Goal_Zone(-Goal_Zone_XY,-Goal_Zone_XY),
 Q4_Goal_Zone(-Goal_Zone_XY,Goal_Zone_XY),
 Q4_Match_Load_Center(-Match_Load_Center_XY,Match_Load_Center_XY),
 Q4_Alley(-Match_Load_Ref1,Match_Load_Ref2);
+
 
 Path Path2Snap2 ({Q1_Alley, Q1_Match_Load_Center, Q1_Match_Load_Center, Q2_Match_Load_Center, Q2_Match_Load_Center, Q2_Alley, Q3_Alley, Q3_Match_Load_Center, Q3_Match_Load_Center, Q4_Match_Load_Center, Q4_Match_Load_Center, Q4_Alley, Q1_Alley});
 }

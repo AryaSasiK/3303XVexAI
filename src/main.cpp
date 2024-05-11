@@ -135,8 +135,8 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
-  getObject();
-  ScoreBall();
+  //moveToPosition();
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -202,10 +202,8 @@ int main() {
 
   // local storage for latest data from the Jetson Nano
   static AI_RECORD       local_map;
-
   // Run at about 15Hz
   int32_t loop_time = 33;
-
   // start the status update display
   thread t1(dashboardTask);
   pre_auton(); 
@@ -213,14 +211,13 @@ int main() {
   Competition.autonomous(testing_tuning);
   //Competition.autonomous(autonomousMain);
   Competition.drivercontrol(usercontrol);
-  
   // print through the controller to the terminal (vexos 1.0.12 is needed)
   // As USB is tied up with Jetson communications we cannot use
   // printf for debug.  If the controller is connected
   // then this can be used as a direct connection to USB on the controller
   // when using VEXcode.
   //
-  //FILE *fp = fopen("/dev/serial2","wb");
+  FILE *fp = fopen("/dev/serial2","wb");
   this_thread::sleep_for(loop_time);
   int counter = 0 ;
   while(1) 
@@ -236,6 +233,7 @@ int main() {
       if (counter > 15)
       {
         //fprintf(fp,"\n\n\n\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
+       fprintf(fp,"\n\n\n\n GPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
         counter = 0 ;
       }
       // request new data    
