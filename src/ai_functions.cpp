@@ -115,61 +115,53 @@ void Print_Path(Path* path )
     }
 }
 
-void moveToPoint(Point *Target, bool frontfacing = true, int Dspeed = 75, int Tspeed = 75)
-{
-    float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), Target->Xcord, Target->Ycord);
-    turnTo(intialHeading, Tspeed, frontfacing);
-    float distance = distanceTo(Target->Xcord, Target->Ycord);
-    float voltage = (Dspeed * .12);
-    if (frontfacing)
+void moveToPoint(Point *Target, bool frontfacing, int Dspeed, int Tspeed)
+{   float targetThreshold = 7; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
+    bool arrivedtoTarget = false;
+    while(!arrivedtoTarget)
     {
-        Chassis.drive_distance(distance, intialHeading, voltage, voltage);
+        float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), Target->Xcord, Target->Ycord);
+        turnTo(intialHeading, Tspeed, frontfacing);
+        float distance = distanceTo(Target->Xcord, Target->Ycord);
+        float voltage = (Dspeed * .12);
+        if(frontfacing)
+        {
+            Chassis.drive_distance(distance, intialHeading, voltage, voltage);
+        }
+        else
+        {
+            Chassis.drive_distance(-distance, 180 + intialHeading, voltage, voltage);
+        }
+        float dist = (Target->Xcord - GPS.xPosition(distanceUnits::cm)) * (Target->Xcord - GPS.xPosition(distanceUnits::cm)) + (Target->Ycord - GPS.xPosition(distanceUnits::cm)) * (Target->Ycord - GPS.xPosition(distanceUnits::cm));
+        if (dist <= targetThreshold * targetThreshold)
+        {
+                arrivedtoTarget = true;
+        }
     }
-    else
-    {
-        Chassis.drive_distance(-distance, 180 + intialHeading, voltage, voltage);
-    }
+
 }
+
 // Method that moves to a given (x,y) position and a desired target theta to finish movement facing in cm
 void moveToPosition(double target_x, double target_y, double target_theta = -1, bool frontfacing = true, int Dspeed = 75, int Tspeed = 75)
 {
-
-    float targetThreshold = 7; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
-    bool arrivedtoTarget = false;
     Point Target(target_x, target_y);
-    Point CurrentPoint(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm));
-    if (!field.Check_Barrier_Intersects(&CurrentPoint, &Target))
+    //Point CurrentPoint(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm));
+    Point CurrentPoint(-40, -40);
+    if (!field.Check_Barrier_Intersects(CurrentPoint, Target))
     {
-        
-        while (!arrivedtoTarget)
-        {
-            float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), target_x, target_y);
-            turnTo(intialHeading, Tspeed, frontfacing);
-            float distance = distanceTo(target_x, target_y);
-            float voltage = (Dspeed * .12);
-            if (frontfacing)
-            {
-                Chassis.drive_distance(distance, intialHeading, voltage, voltage);
-            }
-            else
-            {
-                Chassis.drive_distance(-distance, 180 + intialHeading, voltage, voltage);
-            }
-
-            float dist = (target_x - GPS.xPosition(distanceUnits::cm)) * (target_x - GPS.xPosition(distanceUnits::cm)) + (target_y - GPS.xPosition(distanceUnits::cm)) * (target_y - GPS.xPosition(distanceUnits::cm));
-            if (dist <= targetThreshold * targetThreshold)
-            {
-                arrivedtoTarget = true;
-            }
-        }
+        fprintf(fp,"No Barrier Intersection found moving to point");
+        //moveToPoint(&Target,frontfacing,Dspeed,Tspeed);
     }
     else
     {
-        Path Path2Follow = field.Create_Path_to_Target(&Target);
-       
+        fprintf(fp,"Barrier Intersection found! Creating Path to Target");
+
+        Path Path2Follow = field.Create_Path_to_Target(Target);
+        Print_Path(&Path2Follow);
+
         for (int i = 0; i < Path2Follow.PathPoints.size(); i++)
         {
-            moveToPoint(Path2Follow.PathPoints[i], Dspeed, Tspeed, frontfacing);
+            //moveToPoint(Path2Follow.PathPoints[i], frontfacing, Dspeed, Tspeed);
         }
     }
     if (target_theta != -1)
@@ -258,7 +250,8 @@ void getObject()
     DETECTION_OBJECT Triball = findTarget();
     fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",Triball.mapLocation.x*100, Triball.mapLocation.y*100);
    
-
+    while(!HoldingBall)
+    {
         while(Triball.mapLocation.x && Triball.mapLocation.y == 0)
         {
             Chassis.turn_to_angle(GPS.heading()+turn_step);
@@ -267,9 +260,10 @@ void getObject()
         }
     
         Intake.spin(vex::directionType::fwd,100,vex::velocityUnits::pct);
-        moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100);
+        moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100,true);
 
         Triball = findTarget();
+    }
 
 }
 

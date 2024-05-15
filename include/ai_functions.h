@@ -14,7 +14,6 @@
 extern Field field;
 // Calculates the distance to a given target (x, y)
 float distanceTo(double target_x, double target_y,vex::distanceUnits unit);
-
 void Print_Path(Path* path);
 void moveToPoint(Point *Target, bool frontfacing, int Dspeed, int Tspeed);
 // Moves the robot to a specified position and orientation

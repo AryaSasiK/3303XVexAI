@@ -19,10 +19,10 @@ using namespace vex;
 
 
 //Realsense Offsets (15in, 24in)
-// X(0.25in,), Y(-4.25in,), Z(9.125in,), Heading(0,), Elevation(0,)
+// X(0.25in,0in), Y(-4.25in,12in), Z(9.125in,11in), Heading(0,0), Elevation(0,0)
 
 // GPS Offsets (15in,24in)
-// X(0,), Y(-6.5in,), Z(9.875,), Heading(180,)
+// X(0,0), Y(-6.5in,8in), Z(9.875,11in), Heading(180,180)
 
 
 // ---- START CONFIGURED DEVICES ----
@@ -124,7 +124,7 @@ void usercontrol(void)
   Intake.setVelocity(100,pct);
   while(1)
   {
-    Chassis.control_arcade();
+    //Chassis.control_arcade();
 
     if (Controller1.ButtonL1.pressing()) 
     {
@@ -147,7 +147,10 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
-  getObject();
+ 
+ 
+  //moveToPosition(95.00,150.51,-1,true,50,50);
+  //getObject();
   // for(int i = 0; i < field.Path2Snap2.size(); i++)
   // {
   //   fprintf(fp, "(%.2f,%.2f) -> ", field.Path2Snap2[i]->Xcord, field.Path2Snap2[i]->Xcord);
@@ -241,13 +244,14 @@ int main() {
   //
   //FILE *fp = fopen("/dev/serial2","wb");
 
-  // Path test;
-  // Point* temp;
-  // for(int i = 0; i < field.Path2Snap2.size();i++)
-  // {
-  //   temp = new Point(field.Path2Snap2[i]->Xcord, field.Path2Snap2[i]->Ycord);
-  //   test.PathPoints.push_back(temp);
-  // }
+  Path test;
+  Point* temp;
+  for(int i = 0; i < field.Path2Snap2.size();i++)
+  {
+    temp = new Point(field.Path2Snap2[i]->Xcord,field.Path2Snap2[i]->Ycord);
+    test.PathPoints.push_back(temp);
+  }
+
   // DETECTION_OBJECT target = findTarget();
   // double TargetX = target.mapLocation.x;
   // double TargerY = target.mapLocation.y;
@@ -262,15 +266,17 @@ int main() {
       // set our location to be sent to partner robot
       link.set_remote_location( local_map.pos.x, local_map.pos.y, local_map.pos.az, local_map.pos.status );
 
-      fprintf(fp, "%.2f %.3f %.2f\n", local_map.pos.x, local_map.pos.y, local_map.pos.az);
+      //fprintf(fp, "%.2f %.3f %.2f\n", local_map.pos.x, local_map.pos.y, local_map.pos.az);
       counter += 1 ;
       if (counter > 15)
       {
+        moveToPosition(-22,-155,-1,true,50,50);
+        //Print_Path(&test);
         //findTarget();
         //fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",TargetX, TargerY  );
-       //fprintf(fp,"\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
-        // Print_Path(&test);
-       //fprintf(fp,"\n\n\n\n GPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
+        //fprintf(fp,"\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
+        //field.Print_Lines();
+        //fprintf(fp,"\n\n\n\n GPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
         counter = 0 ;
       }
       // request new data    
