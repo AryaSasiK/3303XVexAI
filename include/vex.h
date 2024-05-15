@@ -14,7 +14,6 @@
 #include <string.h>
 #include <math.h>
 #include <vector>
-#include <iostream>
 #include "v5.h"
 #include "v5_vcs.h"
 #include <cmath>
@@ -26,9 +25,6 @@
 #include "JAR-Template/drive.h"
 #include "JAR-Template/util.h"
 #include "JAR-Template/PID.h"
-
-#include "field.h"
-
 
 
 #define waitUntil(condition)                                                   \

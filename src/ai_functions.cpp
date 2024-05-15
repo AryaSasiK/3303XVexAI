@@ -10,14 +10,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-// #include "vex.h"
 #include "ai_functions.h"
-#include "field.h"
-#include <string>
-#include <iostream>
-
 using namespace std;
-Field field(red);
 // Calculates the distance to the coordinates from the current robot position
 
 float distanceTo(double target_x, double target_y, vex::distanceUnits unit = vex::distanceUnits::in)
@@ -86,40 +80,40 @@ void turnTo(double angle, int speed = 75, bool frontfacing = true)
         Chassis.turn_to_angle(180 + angle, voltage);
     }
 }
-void Print_Path(Path Path2Target)
+void Print_Path(Path* path )
 {
+    
     int Orgin, Target;
-    FILE *fp = fopen("/dev/serial2","wb");
-    int lastelem = Path2Target.PathPoints.size() - 1 ;
-    if(Path2Target.PathPoints[0]->Xcord > 0 && Path2Target.PathPoints[0]->Ycord > 0 ){Orgin = 1;}
-    else if(Path2Target.PathPoints[0]->Xcord > 0 && Path2Target.PathPoints[0]->Ycord < 0 ){Orgin = 2;}
-    else if(Path2Target.PathPoints[0]->Xcord < 0 && Path2Target.PathPoints[0]->Ycord < 0 ){Orgin = 3;}
+    int lastelem = path->PathPoints.size() - 1 ;
+    if(path->PathPoints[0]->Xcord > 0 && path->PathPoints[0]->Ycord > 0 ){Orgin = 1;}
+    else if(path->PathPoints[0]->Xcord > 0 && path->PathPoints[0]->Ycord < 0 ){Orgin = 2;}
+    else if(path->PathPoints[0]->Xcord < 0 && path->PathPoints[0]->Ycord < 0 ){Orgin = 3;}
     else {Orgin = 4;}
-    if(Path2Target.PathPoints[lastelem]->Xcord > 0 && Path2Target.PathPoints[lastelem]->Ycord > 0 ){Target = 1;}
-    else if(Path2Target.PathPoints[lastelem]->Xcord > 0 && Path2Target.PathPoints[lastelem]->Ycord < 0 ){Orgin = 2;}
-    else if(Path2Target.PathPoints[lastelem]->Xcord < 0 && Path2Target.PathPoints[lastelem]->Ycord < 0 ){Target = 3;}
+    if(path->PathPoints[lastelem]->Xcord > 0 && path->PathPoints[lastelem]->Ycord > 0 ){Target = 1;}
+    else if(path->PathPoints[lastelem]->Xcord > 0 && path->PathPoints[lastelem]->Ycord < 0 ){Orgin = 2;}
+    else if(path->PathPoints[lastelem]->Xcord < 0 && path->PathPoints[lastelem]->Ycord < 0 ){Target = 3;}
     else {Target = 4;}
-
-    for(int i = 0; i < Path2Target.PathPoints.size(); i++)
+    
+    for(int i = 0; i < path->PathPoints.size(); i++)
     {
         if(i == 0)
         {
-            fprintf(fp, "Path Found || (Q%d -> Q%d) Start of Path (%.2f,%.2f) -> ", Orgin, Target, Path2Target.PathPoints[i]->Xcord, Path2Target.PathPoints[i]->Ycord);
+            //cout << "Path Found || (Q" << Orgin << "-> Q" << Target << ") Start of Path (" << path->PathPoints[i]->Xcord << "," << path->PathPoints[i]->Ycord << ") -> " ;
+            fprintf(fp, "Path Found || (Q%d -> Q%d) Start of Path (%.2f,%.2f) -> ", Orgin, Target, path->PathPoints[i]->Xcord, path->PathPoints[i]->Ycord);
         }
-        else if(i == Path2Target.PathPoints.size() - 1)
+        else if(i == path->PathPoints.size() - 1)
         {
-            fprintf(fp, "(%.2f,%.2f) End of Path ", Path2Target.PathPoints[i]->Xcord, Path2Target.PathPoints[i]->Ycord);
+            //cout << "(" << path->PathPoints[i]->Xcord << "," << path->PathPoints[i]->Ycord << ") End of Path\n" ;
+            fprintf(fp, "(%.2f,%.2f) End of Path \n", path->PathPoints[i]->Xcord, path->PathPoints[i]->Ycord);
         }
         else
         {
-            fprintf(fp, "(%.2f,%.2f) -> ", Path2Target.PathPoints[i]->Xcord, Path2Target.PathPoints[i]->Ycord);
+            //cout << "(" << path->PathPoints[i]->Xcord << "," << path->PathPoints[i]->Ycord << ")";
+            fprintf(fp, "(%.2f,%.2f) -> ", path->PathPoints[i]->Xcord, path->PathPoints[i]->Ycord);
 
         }
     }
-
-    fclose(fp);
 }
-
 
 void moveToPoint(Point *Target, bool frontfacing = true, int Dspeed = 75, int Tspeed = 75)
 {
@@ -144,9 +138,9 @@ void moveToPosition(double target_x, double target_y, double target_theta = -1, 
     bool arrivedtoTarget = false;
     Point Target(target_x, target_y);
     Point CurrentPoint(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm));
-
     if (!field.Check_Barrier_Intersects(&CurrentPoint, &Target))
     {
+        
         while (!arrivedtoTarget)
         {
             float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), target_x, target_y);
@@ -171,11 +165,11 @@ void moveToPosition(double target_x, double target_y, double target_theta = -1, 
     }
     else
     {
-        Path Path2Target = field.Create_Path_to_Target(&Target);
-        Print_Path(Path2Target);
-        for (int i = 0; i < Path2Target.PathPoints.size(); i++)
+        Path Path2Follow = field.Create_Path_to_Target(&Target);
+       
+        for (int i = 0; i < Path2Follow.PathPoints.size(); i++)
         {
-            moveToPoint(Path2Target.PathPoints[i], Dspeed, Tspeed, frontfacing);
+            moveToPoint(Path2Follow.PathPoints[i], Dspeed, Tspeed, frontfacing);
         }
     }
     if (target_theta != -1)
@@ -184,7 +178,7 @@ void moveToPosition(double target_x, double target_y, double target_theta = -1, 
     }
 }
 
-// Function to find the target object based on type and return its record
+//Function to find the target object based on type and return its record
 DETECTION_OBJECT findTarget()
 {
     DETECTION_OBJECT target;
@@ -193,37 +187,66 @@ DETECTION_OBJECT findTarget()
     double lowestDist = 1000000;
     for (int i = 0; i < local_map.detectionCount; i++)
     {
-        if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
+        double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
+        if (distance < lowestDist)
         {
-            double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
-            if (distance < lowestDist)
-            {
-                if(field.Side == vex::color::red)
-                {
-                    if(local_map.detections[i].classID == 0 || 1)
-                    {
-                        target = local_map.detections[i];
-                        lowestDist = distance;
-                    }
-                }
-                else if(field.Side == vex::color::blue)
-                {
-                    if(local_map.detections[i].classID == 0 || 2)
-                    {
-                        target = local_map.detections[i];
-                        lowestDist = distance;
-                    }
-                }
-                else
-                {
+            if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
+            {    
                     target = local_map.detections[i];
-                    lowestDist = distance;
-                }
+                    lowestDist = distance;            
             }
         }
     }
+   
+    fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",target.mapLocation.x*100, target.mapLocation.y*100);
     return target;
 }
+
+
+// //Function to find the target object based on type and return its record
+// DETECTION_OBJECT findTarget()
+// {
+//     DETECTION_OBJECT target;
+//     static AI_RECORD local_map;
+//     jetson_comms.get_data(&local_map);
+//     double lowestDist = 1000000;
+//     for (int i = 0; i < local_map.detectionCount; i++)
+//     {
+//         double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
+//         if (distance < lowestDist)
+//         {
+//             if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
+//             {
+//                 if(field.Side == vex::color::red)
+//                 {
+//                     if(local_map.detections[i].classID == 1 || local_map.detections[i].classID == 0)
+//                     {
+//                         target = local_map.detections[i];
+//                         lowestDist = distance;
+//                     }
+//                 }
+//                 else if(field.Side == vex::color::blue)
+//                 {
+//                     if(local_map.detections[i].classID == 2 || local_map.detections[i].classID == 0)
+//                     {
+//                         target = local_map.detections[i];
+//                         lowestDist = distance;
+//                     }
+//                 }
+//                 else if(field.Side == vex::color::purple)
+//                 {
+//                     target = local_map.detections[i];
+//                     lowestDist = distance;
+//                 }
+//             }
+//         }
+//     }
+   
+//     fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",target.mapLocation.x*100, target.mapLocation.y*100);
+//     return target;
+// }
+
+
 
 // Function to retrieve an object based on detection
 void getObject()
@@ -233,23 +256,21 @@ void getObject()
     bool HoldingBall = false; 
     float turn_step = 45;
     DETECTION_OBJECT Triball = findTarget();
-    while(!HoldingBall)
-    {
+    fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",Triball.mapLocation.x*100, Triball.mapLocation.y*100);
+   
+
         while(Triball.mapLocation.x && Triball.mapLocation.y == 0)
         {
             Chassis.turn_to_angle(GPS.heading()+turn_step);
             Triball = findTarget();
+            fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",Triball.mapLocation.x*100, Triball.mapLocation.y*100);
         }
     
         Intake.spin(vex::directionType::fwd,100,vex::velocityUnits::pct);
         moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100);
-        if(Balldetect.color() == vex::color::red || vex::color::green || vex::color::blue)
-            if(Balldetect.isNearObject())
-            {
-                HoldingBall = true;
-            }
+
         Triball = findTarget();
-    }
+
 }
 
 void ScoreBall()
@@ -262,7 +283,7 @@ void ScoreBall()
     {
         moveToPosition(61.35, 0.00, 270);
     }
-    Intake.spin(reverse);
+    Intake.spin(vex::directionType::rev);
     Chassis.drive_distance(25);
     Intake.stop(coast);
     Chassis.drive_distance(-15);

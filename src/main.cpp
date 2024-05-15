@@ -8,13 +8,25 @@
 /*----------------------------------------------------------------------------*/
 
 #include "ai_functions.h"
-#include "vex.h"
+#include "field.h"
 
 
+
+using namespace std;
 using namespace vex;
 
-// ---- START CONFIGURED DEVICES ----
 
+
+
+//Realsense Offsets (15in, 24in)
+// X(0.25in,), Y(-4.25in,), Z(9.125in,), Heading(0,), Elevation(0,)
+
+// GPS Offsets (15in,24in)
+// X(0,), Y(-6.5in,), Z(9.875,), Heading(180,)
+
+
+// ---- START CONFIGURED DEVICES ----
+Field field(red);
 brain Brain;
 controller Controller1 = controller(primary);
 motor leftDriveA = motor(PORT20, ratio6_1, true);  
@@ -36,7 +48,7 @@ motor HangB = motor(PORT6, ratio36_1, true);
 motor_group Hang = motor_group(HangA, HangB);
 motor Intake = motor(PORT11, ratio6_1, true);
 optical Balldetect = optical(PORT14);
-
+FILE *fp = fopen("/dev/serial2","wb");
 // A global instance of competition
 competition Competition;
 // create instance of jetson class to receive location and other
@@ -93,14 +105,14 @@ void pre_auton(void)
     wait(25, msec);
   }
   GPS.calibrate();
-  Brain.Screen.print("Calibrating GPS for VEX AI");
+ // Brain.Screen.print("Calibrating GPS for VEX AI");
   while (GPS.isCalibrating()) 
   {
     wait(25, msec);
   }
   // reset the screen now that the calibration is complete
-  Brain.Screen.clearScreen();
-  Brain.Screen.setCursor(1,1);
+  //Brain.Screen.clearScreen();
+  //Brain.Screen.setCursor(1,1);
 
   wait(50, msec);
   Brain.Screen.clearScreen();
@@ -116,12 +128,12 @@ void usercontrol(void)
 
     if (Controller1.ButtonL1.pressing()) 
     {
-      Intake.spin(fwd);
+      Intake.spin(vex::directionType::fwd);
       Controller1LeftShoulderControlMotorsStopped = false;
     } 
     else if (Controller1.ButtonL2.pressing()) 
     {
-      Intake.spin(reverse);
+      Intake.spin(vex::directionType::rev);
       Controller1LeftShoulderControlMotorsStopped = false;
     } 
     else if (!Controller1LeftShoulderControlMotorsStopped) 
@@ -135,7 +147,16 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
-  //moveToPosition();
+  getObject();
+  // for(int i = 0; i < field.Path2Snap2.size(); i++)
+  // {
+  //   fprintf(fp, "(%.2f,%.2f) -> ", field.Path2Snap2[i]->Xcord, field.Path2Snap2[i]->Xcord);
+  // }
+  //Print_Path(&test);
+  
+  //fprintf(fp, "(%.2f,%.2f) -> ", field.Path2Snap2[0]->Xcord, field.Path2Snap2[0]->Ycord);
+  //while(true)
+    //fprintf(fp,"\n\n\n\n GPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
 
 }
 
@@ -198,6 +219,7 @@ void autonomousMain(void)
   firstAutoFlag = false;
 }
 
+
 int main() {
 
   // local storage for latest data from the Jetson Nano
@@ -210,30 +232,45 @@ int main() {
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(testing_tuning);
   //Competition.autonomous(autonomousMain);
-  Competition.drivercontrol(usercontrol);
+  Competition.drivercontrol(testing_tuning);
   // print through the controller to the terminal (vexos 1.0.12 is needed)
   // As USB is tied up with Jetson communications we cannot use
   // printf for debug.  If the controller is connected
   // then this can be used as a direct connection to USB on the controller
   // when using VEXcode.
   //
-  FILE *fp = fopen("/dev/serial2","wb");
+  //FILE *fp = fopen("/dev/serial2","wb");
+
+  // Path test;
+  // Point* temp;
+  // for(int i = 0; i < field.Path2Snap2.size();i++)
+  // {
+  //   temp = new Point(field.Path2Snap2[i]->Xcord, field.Path2Snap2[i]->Ycord);
+  //   test.PathPoints.push_back(temp);
+  // }
+  // DETECTION_OBJECT target = findTarget();
+  // double TargetX = target.mapLocation.x;
+  // double TargerY = target.mapLocation.y;
   this_thread::sleep_for(loop_time);
   int counter = 0 ;
   while(1) 
   {
+
       // get last map data
       jetson_comms.get_data( &local_map );
 
       // set our location to be sent to partner robot
       link.set_remote_location( local_map.pos.x, local_map.pos.y, local_map.pos.az, local_map.pos.status );
 
-      //fprintf(fp, "%.2f %.3f %.2f\n", local_map.pos.x, local_map.pos.y, local_map.pos.az);
+      fprintf(fp, "%.2f %.3f %.2f\n", local_map.pos.x, local_map.pos.y, local_map.pos.az);
       counter += 1 ;
       if (counter > 15)
       {
-        //fprintf(fp,"\n\n\n\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
-       fprintf(fp,"\n\n\n\n GPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
+        //findTarget();
+        //fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",TargetX, TargerY  );
+       //fprintf(fp,"\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
+        // Print_Path(&test);
+       //fprintf(fp,"\n\n\n\n GPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
         counter = 0 ;
       }
       // request new data    

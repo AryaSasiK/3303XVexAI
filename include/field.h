@@ -1,6 +1,12 @@
 
 #pragma once
 #include <vector>
+#include <robot-config.h>
+#include "vex.h"
+#include <algorithm>
+#include <iostream>
+#include <initializer_list> 
+#include <cstdarg>
 
 using namespace std;
 
@@ -14,6 +20,8 @@ public:
     {
         Xcord = X;
         Ycord = Y;
+        
+
     }
     ~Point() {}
 };
@@ -28,6 +36,11 @@ public:
         LinePoints[0] = &A;
         LinePoints[1] = &B;
     }
+    Line(Point* A, Point* B) : Line()
+    {
+        LinePoints[0] = A;
+        LinePoints[1] = B;
+    }
     ~Line()
     {
     }
@@ -36,8 +49,8 @@ public:
 class Barrier
 {
 public:
-    vector<Line *> BarrierLines;
-    Barrier(std::initializer_list<Line> Barrier_List)
+    vector <Line *> BarrierLines;
+    Barrier(Line A , Line B )
     {
         for (auto List : Barrier_List)
         {
@@ -50,34 +63,31 @@ public:
 class Path
 {
 public:
-    vector<Point *> PathPoints;
+    
+    vector <Point *> PathPoints;
     Path() {}
-    Path(std::initializer_list<Point> PointsList) : Path()
-    {
-        for (auto List : PointsList)
-        {
-            PathPoints.push_back(&List);
-        }
-    }
     ~Path() {}
 };
 
 class Field
 {
 private:
-    const Path *Snap_Path;
-    vector<Line> Snap_Path_Lines;
-    vector<Barrier *> Field_Barriers;
-    vector<Point*> Goal_Zone;
-
+    vector<const Barrier *> Field_Barriers;
+    vector<const Point*> Goal_Zone;
+    
 
 public:
-   
+    
     Field(vex::color Alliance_Color);
+    vector<const Point*> Path2Snap2;
+    vector<const Line*> P2S2_Lines;
     vex::color Side;
-    pair<Point *, double> Find_Closest_Point_In_Line(Point *point, Line LineSeg);
+    pair<Point *, double> Find_Closest_Point_In_Line(Point *point, const Line* LineSeg);
+    pair<Point *, int> Find_Point_on_Path(Point *Target);
     bool Check_Barrier_Intersects(Point *CurrentPos, Point *PointOnLine);
     bool In_Goal_Zone(double Ball_x, double Ball_y);
-    pair<Point *, int> Find_Point_on_Path(Point *Target);
     Path Create_Path_to_Target(Point *Target);
+    const Line* Find_Goal_Side();
 };
+
+

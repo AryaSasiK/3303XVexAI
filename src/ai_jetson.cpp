@@ -291,8 +291,7 @@ jetson::parse( uint8_t data ) {
 void
 jetson::request_map() {
     // check timeout and clear state machine if necessary
-    if( state != jetson_state::kStateSyncWait1 && timer.time() > 250 ) 
-    {
+    if( state != jetson_state::kStateSyncWait1 && timer.time() > 250 ) {
       state = jetson_state::kStateSyncWait1;
     }
 
