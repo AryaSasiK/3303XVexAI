@@ -89,7 +89,8 @@ void tuned_constants()
 
 
 void pre_auton(void) 
-{
+{ 
+  
   tuned_constants();
   Brain.Screen.clearScreen();
   Brain.Screen.print("Device initialization...");
@@ -116,6 +117,7 @@ void pre_auton(void)
 
   wait(50, msec);
   Brain.Screen.clearScreen();
+  
 }
 
 bool Controller1LeftShoulderControlMotorsStopped = true;
@@ -147,7 +149,29 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
-  getObject();
+  //getObject();
+
+  Intake.spin(vex::directionType::fwd);
+
+  Point point = Point(0,0);
+  Point target = Point(10,10);
+
+  fprintf(fp, "Starting intersection test"); 
+  bool intersect = field.Check_Barrier_Intersects(&point, &target);
+  fprintf(fp, "Ending intersection test");
+
+  Intake.stop();
+
+  if (intersect) {
+    fprintf(fp, "Intersection: True"); 
+  } else {
+    fprintf(fp, "Intersection: False"); 
+  }
+
+   if (intersect) {
+    Intake.spin(vex::directionType::fwd);
+  }
+
   // for(int i = 0; i < field.Path2Snap2.size(); i++)
   // {
   //   fprintf(fp, "(%.2f,%.2f) -> ", field.Path2Snap2[i]->Xcord, field.Path2Snap2[i]->Xcord);
@@ -280,4 +304,22 @@ int main() {
       // Allow other tasks to run
       this_thread::sleep_for(loop_time);
   }
+}
+
+
+bool intersection_test() {
+  /*
+  Point point = Point(0,0);
+  Point target = Point(10,10);
+
+  bool intersect = field.Check_Barrier_Intersects(&point, &target);
+
+  if (intersect) {
+    fprintf(fp, "Intersection: True"); 
+  } else {
+    fprintf(fp, "Intersection: False"); 
+  }
+  */
+
+  return true;
 }

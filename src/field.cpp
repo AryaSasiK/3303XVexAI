@@ -90,10 +90,10 @@ Q4_LineA(Q4_Goal_Zone,Q4_Match_Load_Center),
 Q4_LineB(Q4_Match_Load_Center,Q4_Alley),
 Q4_LineC(Q4_Alley,Q1_Alley);
 
-const Barrier RedGoal({Red_Front_Side,Red_Left_Side,Red_Right_Side});
-const Barrier BlueGoal({Blue_Front_Side,Blue_Left_Side,Blue_Right_Side});
-const Barrier CenterBarrier({Blue_Alley,Red_Alley,Center_Bar});
-const Barrier FieldPerimeter({Front_Side_Field,Right_Side_Field,Rear_Side_Field,Left_Side_Field});
+const Barrier RedGoal(Red_Front_Side,Red_Left_Side,Red_Right_Side);
+const Barrier BlueGoal(Blue_Front_Side,Blue_Left_Side,Blue_Right_Side);
+const Barrier CenterBarrier(Blue_Alley,Red_Alley,Center_Bar);
+const Barrier FieldPerimeter(Front_Side_Field,Right_Side_Field,Rear_Side_Field);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Field::Field(vex::color Alliance_Color)
@@ -130,7 +130,7 @@ Field::Field(vex::color Alliance_Color)
     Field_Barriers.push_back(&CenterBarrier);
     Field_Barriers.push_back(&BlueGoal);
     Field_Barriers.push_back(&RedGoal);
-    Field_Barriers.push_back(&FieldPerimeter);
+    // Field_Barriers.push_back(&FieldPerimeter);
   
     Goal_Zone.push_back(&Red_BL_Corner);
     Goal_Zone.push_back(&Red_FL_Corner);

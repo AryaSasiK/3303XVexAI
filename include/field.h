@@ -50,12 +50,11 @@ class Barrier
 {
 public:
     vector <Line *> BarrierLines;
-    Barrier(Line A , Line B )
+    Barrier(Line A , Line B, Line C )
     {
-        for (auto List : Barrier_List)
-        {
-            BarrierLines.push_back(&List);
-        }
+        BarrierLines.push_back(&A);
+        BarrierLines.push_back(&B);
+        BarrierLines.push_back(&C);
     }
     ~Barrier() {}
 };
