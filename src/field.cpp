@@ -100,7 +100,6 @@ Field::Field(vex::color Alliance_Color)
 {
 
     Side = Alliance_Color;
-
     Path2Snap2.push_back(&Q1_Alley);
     Path2Snap2.push_back(&Q1_Match_Load_Center);
     Path2Snap2.push_back(&Q1_Goal_Zone);
@@ -234,17 +233,17 @@ void Field::Print_Lines()
 //     fprintf(fp,"Point A: (%.2f, %.2f) Point B: (%.2f, %.2f)\n",Q1_LineC.LinePoint.first.Xcord,Q1_LineC.LinePoint.first.Ycord, Q1_LineC.LinePoint.second.Xcord, Q1_LineC.LinePoint.first.Ycord);
 }
 
-bool Field::In_Goal_Zone(double Ball_x, double Ball_y)
+bool Field::In_Zone(double Ball_x, double Ball_y,vector<const Point*> Zone)
 {
-    int num_vertices = Goal_Zone.size();
+    int num_vertices = Zone.size();
     double x = abs(Ball_x), y = Ball_y;
     bool inside = false;
-    Point P1(Goal_Zone[0]->Xcord,Goal_Zone[0]->Ycord);
+    Point P1(Zone[0]->Xcord,Zone[0]->Ycord);
     Point P2;
     // Loop through each edge in the polygon
     for (int i = 1; i <= num_vertices; i++) 
     {
-       P2 = Point(Goal_Zone[i % num_vertices]->Xcord,Goal_Zone[i % num_vertices]->Ycord);
+       P2 = Point(Zone[i % num_vertices]->Xcord,Zone[i % num_vertices]->Ycord);
         if (y > min(P1.Ycord, P2.Ycord)) 
         {
             if (y <= max(P1.Ycord, P2.Ycord)) 
@@ -272,105 +271,117 @@ bool pairCompare(const std::pair<Point, double>& firstElem, const std::pair<Poin
 
 pair<Point, int> Field::Find_Point_on_Path(Point freePoint)
 {
-    vector<pair<Point, double>> Point_Dist;
-    vector<pair<Point, double>> Line_Pos; // This serves as a copy of the above vector
-    pair<Point,int> Point_LinePos;
-
+    vector<pair<Point, double>> Point_Dist;// Vector that stores a Point which lies on a line in our Path2Snap2 and the distance from target 
+    vector<double> PiL; // This serves as a copy of the distances 
+    pair<Point,int> Point_PiP; // This holds the closest point to a line on the Snap2path and its line position on that path
     pair<Point, double> temp;
-    fprintf(fp,"Line (X:%.2f, %.2f)",P2S2_Lines[1]->LinePoints.first.Xcord,P2S2_Lines[1]->LinePoints.first.Ycord);
-    for(int i = 0; i < Path2Snap2.size() - 1; i++)
-    {   temp = Find_Closest_Point_In_Line(freePoint,P2S2_Lines[i]);
-        Point_Dist.push_back(temp);
-        Line_Pos.push_back(temp);
+
+    for(int i = 0; i < P2S2_Lines.size(); i++)
+    {   
+        temp = Find_Closest_Point_In_Line(freePoint,P2S2_Lines[i]);
+        Point_Dist.push_back(temp); // 
+        PiL.push_back(temp.second); // This will hold the distance in the order of the path lines 
     }
-    if(Point_Dist.size() > 1 && Line_Pos.size() > 1)
-    {
-        //fprintf(fp,"Point_Dist & Line_Pos vectors are populated");
-    }
-    else
-    {
-        //fprintf(fp,"Point_Dist & Line_Pos vectors are empty");
-    }
-    std::sort(Point_Dist.begin(),Point_Dist.end(), pairCompare);
+
+    // if(Point_Dist.size() > 1 && PiL.size() > 1)
+    //     fprintf(fp,"Point_Dist & Line_Pos vectors are populated");
+    // else
+    //     fprintf(fp,"Point_Dist & Line_Pos vectors are empty");
+
+    sort(Point_Dist.begin(),Point_Dist.end(), pairCompare);
+
+    // for(int k = 0; k < Point_Dist.size(); k++)
+    // {
+    //     fprintf(fp,"Sorted Vector Point %i is at coordinate (%.2f, %.2f) with a distance %.2f \n", k, Point_Dist[k].first.Xcord, Point_Dist[k].first.Ycord, Point_Dist[k].second);
+    // }
+    
     for(int j = 0; j < Point_Dist.size(); j++)
     {
         if(!Check_Barrier_Intersects(freePoint,Point_Dist[j].first))
         {
-            Point_LinePos.first = Point_Dist[j].first;
-            for(int k = 0; k < Point_Dist.size(); k++)
+            
+            Point_PiP.first.Xcord = Point_Dist[j].first.Xcord;
+            Point_PiP.first.Ycord = Point_Dist[j].first.Ycord;
+            for(int k = 0; k < PiL.size(); k++)
             {
-                if(Point_Dist[j].first.Xcord == Line_Pos[k].first.Xcord && Point_Dist[j].first.Ycord == Line_Pos[k].first.Ycord)
-                    Point_LinePos.second = k + 1;
+                if(PiL[k] == Point_Dist[j].second)
+                {
+                    Point_PiP.second = k;
+                    return Point_PiP;
+                }
             }
-
-            return Point_LinePos;
         }
     }
-    return Point_LinePos;
-
+    return Point_PiP;
 }
 
 Path Field::Create_Path_to_Target(Point Target)
 {
     Path DrivePath;
-    int StartingLine;
-    int EndingLine;
-    int LineBetween; 
-   
     Point CurrentPos(GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
+    //Point CurrentPos(-40, -40);
     Point* temp;
     pair<Point, int> Start = Find_Point_on_Path(CurrentPos);
-    DrivePath.PathPoints.push_back(&Start.first);
-    StartingLine = Start.second;
     pair<Point,int> End = Find_Point_on_Path(Target);
-    EndingLine = End.second;
-    int NumofLine = 2;//Snap_Path->PathLines.size();
+    vector<int> PathA;
+    vector<int> PathB;
+    int StartingLine = Start.second+1;
+    int EndingLine = End.second+1;
+ 
 
-    if(StartingLine > EndingLine) // SL = 4 EL= 1 // SL = 10 EL = 1 
-    {
-        LineBetween = StartingLine - EndingLine;  // = -3 // = 11
-        if(abs(LineBetween) > NumofLine/2) 
+        for(int i = StartingLine ; i != EndingLine  ; i--)
         {
-            LineBetween = NumofLine - StartingLine + EndingLine; // = +3
-        }
-    }
-    else // SL = 1 EL= 4 // SL = 1 EL = 10
-    {
-        LineBetween = EndingLine - StartingLine; // = 3 // = -11
-        if(abs(LineBetween) > NumofLine/2) 
-        {
-            LineBetween = EndingLine - NumofLine - StartingLine;   // = -3
-        }
-    }
-
-    if(LineBetween < 0)   // 0 12 11 
-    {
-        for(int i = StartingLine - 1; i == EndingLine - 1 ; i--)
-        {
-            temp = new Point(Path2Snap2[i]->Xcord,Path2Snap2[i]->Ycord);
-            DrivePath.PathPoints.push_back(temp);
-            if(i == 0 )
+            PathA.push_back(i-1);
+            if(i == 1 )
             {
-                i = Path2Snap2.size();
+                i = Path2Snap2.size() + 1; 
             }
+
         }
-    }
-    else   
-    {
-         for(int i = StartingLine; i == EndingLine  ; i++)  
+        for(int i = StartingLine; i != EndingLine  ; i++)  
         {
-            temp = new Point(Path2Snap2[i]->Xcord,Path2Snap2[i]->Ycord);
-            DrivePath.PathPoints.push_back(temp);
             if(i == Path2Snap2.size())
             {
-                i = 0 ;
+                i = 0;
+            }
+            PathB.push_back(i);
+        }
+        int pos; 
+        fprintf(fp,"Path A has a size of %i\n",PathA.size());
+        fprintf(fp,"Path B has a size of %i\n",PathB.size());
+        fprintf(fp,"Current Pos: (%.2f, %.2f) - > Target Pos: (%.2f, %.2f)\n", CurrentPos.Xcord, CurrentPos.Ycord, Target.Xcord, Target.Ycord);
+        fprintf(fp,"First point to drive to is (%.2f, %.2f)\n",Start.first.Xcord, Start.first.Ycord);
+
+        DrivePath.PathPoints.push_back(&Start.first);
+        if(PathA.size() > PathB.size())
+        {
+            //fprintf(fp,"Filling Path2Follow with Path B\n");
+            for(int i = 0; i < PathB.size(); i++)
+            {
+                pos = PathB[i];
+                temp = new Point(Path2Snap2[pos]->Xcord,Path2Snap2[pos]->Ycord);
+                DrivePath.PathPoints.push_back(temp);
+                fprintf(fp," -> (%.2f, %.2f)",temp->Xcord, temp->Ycord);
             }
         }
-    }
-    DrivePath.PathPoints.push_back(&End.first);
-    DrivePath.PathPoints.push_back(&Target);
+        else
+        {
+            //fprintf(fp,"Filling Path2Follow with Path A\n");
+            for(int i = 0; i < PathA.size(); i++)
+            {
+                pos = PathA[i];
+                temp = new Point(Path2Snap2[pos]->Xcord,Path2Snap2[pos]->Ycord);
+                DrivePath.PathPoints.push_back(temp);
+                fprintf(fp," -> (%.2f, %.2f)",temp->Xcord, temp->Ycord);
+            }
+        }
 
-    return DrivePath ;
+    DrivePath.PathPoints.push_back(&End.first);
+    fprintf(fp,"- > (%.2f, %.2f) Last point before target ",End.first.Xcord, End.first.Ycord);
+    DrivePath.PathPoints.push_back(&Target);
+    fprintf(fp,"|| Target point is (%.2f, %.2f)\n",Target.Xcord, Target.Ycord);
+
+     return DrivePath ;
 
 }
 

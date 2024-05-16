@@ -26,28 +26,53 @@ using namespace vex;
 
 
 // ---- START CONFIGURED DEVICES ----
-Field field(red);
+Field field(purple);
 brain Brain;
 controller Controller1 = controller(primary);
+//24in
+// motor leftDriveA = motor(PORT9, ratio6_1, true);  
+// motor leftDriveB = motor(PORT10, ratio6_1, true);   
+// motor leftDriveC = motor(PORT7, ratio6_1, true);   
+// motor leftDriveD = motor(PORT8, ratio6_1, true);
+
+// motor rightDriveA = motor(PORT3, ratio6_1, false);
+// motor rightDriveB = motor(PORT4, ratio6_1, false);
+// motor rightDriveC = motor(PORT1, ratio6_1, false);
+// motor rightDriveD = motor(PORT2, ratio6_1, false);
+// const int32_t InertialPort = PORT19;
+// gps GPS = gps(PORT20, 0.0, -146.0, mm, 180);
+// const int32_t HangAPort = PORT14;
+// const int32_t HangBPort = PORT13;
+// const int32_t IntakePort = PORT12;
+// motor Catapult = motor(PORT11,ratio36_1,true);
+
+
+// //15in
 motor leftDriveA = motor(PORT20, ratio6_1, true);  
 motor leftDriveB = motor(PORT10, ratio6_1, true);   
 motor leftDriveC = motor(PORT19, ratio6_1, false);   
 motor leftDriveD = motor(PORT9, ratio6_1, false);   
-//Right Motors 
+
 motor rightDriveA = motor(PORT12, ratio6_1, false);
 motor rightDriveB = motor(PORT2, ratio6_1, false);
-motor rightDriveC = motor(PORT13, ratio6_1, true);
+motor rightDriveC = motor(PORT7, ratio6_1, true);
 motor rightDriveD = motor(PORT4, ratio6_1, true);
+const int32_t InertialPort = PORT16;
+gps GPS = gps(PORT3, 0.0, -146.0, mm, 180);
+const int32_t HangAPort = PORT16;
+const int32_t HangBPort = PORT16;
+const int32_t IntakePort = PORT11;
+
+optical Balldetect = optical(PORT14);
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
-const int32_t InertialPort = PORT16;
 Drive Chassis(ZERO_TRACKER_NO_ODOM,LeftDriveSmart,RightDriveSmart,InertialPort,3.125,0.6,360,PORT1,-PORT2,PORT3,-PORT4,3,2.75,-2,1,-2.75,5.5);
-gps GPS = gps(PORT3, 0.0, -146.0, mm, 180);
-motor HangA = motor(PORT1, ratio36_1, false);
-motor HangB = motor(PORT6, ratio36_1, true);
+motor HangA = motor(HangAPort, ratio36_1, false);
+motor HangB = motor(HangBPort, ratio36_1, true);
 motor_group Hang = motor_group(HangA, HangB);
-motor Intake = motor(PORT11, ratio6_1, true);
-optical Balldetect = optical(PORT14);
+motor Intake = motor(IntakePort, ratio6_1, true);
+
+
 FILE *fp = fopen("/dev/serial2","wb");
 // A global instance of competition
 competition Competition;
@@ -91,11 +116,11 @@ void tuned_constants()
 void pre_auton(void) 
 {
   tuned_constants();
+  Balldetect.objectDetectThreshold(65);
   Brain.Screen.clearScreen();
   Brain.Screen.print("Device initialization...");
   Brain.Screen.setCursor(2, 1);
   // calibrate the drivetrain Inertial
-  Balldetect.setLight(vex::ledState::on);
   Chassis.Gyro.calibrate();
   Brain.Screen.print("Calibrating Inertial for Chassis");
   Brain.Screen.setCursor(3, 1);
@@ -124,7 +149,7 @@ void usercontrol(void)
   Intake.setVelocity(100,pct);
   while(1)
   {
-    //Chassis.control_arcade();
+    Chassis.control_arcade();
 
     if (Controller1.ButtonL1.pressing()) 
     {
@@ -147,8 +172,8 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
- 
- 
+  //moveToPosition(122,122,-1,true,100,100);
+  //moveToPosition(-61.35,61.35,-1,true,100,100);
   //moveToPosition(95.00,150.51,-1,true,50,50);
   //getObject();
   // for(int i = 0; i < field.Path2Snap2.size(); i++)
@@ -176,6 +201,10 @@ void testing_tuning(void)
 void auto_Isolation(void) 
 {
 
+    if(getObject())
+    {
+      ScoreBall();
+    }
 }
 
 
@@ -233,9 +262,9 @@ int main() {
   thread t1(dashboardTask);
   pre_auton(); 
   // Set up callbacks for autonomous and driver control periods.
-  Competition.autonomous(testing_tuning);
+  Competition.autonomous(auto_Isolation);
   //Competition.autonomous(autonomousMain);
-  Competition.drivercontrol(testing_tuning);
+  Competition.drivercontrol(usercontrol);
   // print through the controller to the terminal (vexos 1.0.12 is needed)
   // As USB is tied up with Jetson communications we cannot use
   // printf for debug.  If the controller is connected
@@ -244,13 +273,13 @@ int main() {
   //
   //FILE *fp = fopen("/dev/serial2","wb");
 
-  Path test;
-  Point* temp;
-  for(int i = 0; i < field.Path2Snap2.size();i++)
-  {
-    temp = new Point(field.Path2Snap2[i]->Xcord,field.Path2Snap2[i]->Ycord);
-    test.PathPoints.push_back(temp);
-  }
+  // Path test;
+  // Point* temp;
+  // for(int i = 0; i < field.Path2Snap2.size();i++)
+  // {
+  //   temp = new Point(field.Path2Snap2[i]->Xcord,field.Path2Snap2[i]->Ycord);
+  //   test.PathPoints.push_back(temp);
+  // }
 
   // DETECTION_OBJECT target = findTarget();
   // double TargetX = target.mapLocation.x;
@@ -270,10 +299,10 @@ int main() {
       counter += 1 ;
       if (counter > 15)
       {
-        moveToPosition(-22,-155,-1,true,50,50);
+        //testing_tuning();
         //Print_Path(&test);
         //findTarget();
-        //fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",TargetX, TargerY  );
+        //(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",TargetX, TargerY  );
         //fprintf(fp,"\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
         //field.Print_Lines();
         //fprintf(fp,"\n\n\n\n GPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));

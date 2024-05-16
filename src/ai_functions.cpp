@@ -80,43 +80,9 @@ void turnTo(double angle, int speed = 75, bool frontfacing = true)
         Chassis.turn_to_angle(180 + angle, voltage);
     }
 }
-void Print_Path(Path* path )
-{
-    
-    int Orgin, Target;
-    int lastelem = path->PathPoints.size() - 1 ;
-    if(path->PathPoints[0]->Xcord > 0 && path->PathPoints[0]->Ycord > 0 ){Orgin = 1;}
-    else if(path->PathPoints[0]->Xcord > 0 && path->PathPoints[0]->Ycord < 0 ){Orgin = 2;}
-    else if(path->PathPoints[0]->Xcord < 0 && path->PathPoints[0]->Ycord < 0 ){Orgin = 3;}
-    else {Orgin = 4;}
-    if(path->PathPoints[lastelem]->Xcord > 0 && path->PathPoints[lastelem]->Ycord > 0 ){Target = 1;}
-    else if(path->PathPoints[lastelem]->Xcord > 0 && path->PathPoints[lastelem]->Ycord < 0 ){Orgin = 2;}
-    else if(path->PathPoints[lastelem]->Xcord < 0 && path->PathPoints[lastelem]->Ycord < 0 ){Target = 3;}
-    else {Target = 4;}
-    
-    for(int i = 0; i < path->PathPoints.size(); i++)
-    {
-        if(i == 0)
-        {
-            //cout << "Path Found || (Q" << Orgin << "-> Q" << Target << ") Start of Path (" << path->PathPoints[i]->Xcord << "," << path->PathPoints[i]->Ycord << ") -> " ;
-            fprintf(fp, "Path Found || (Q%d -> Q%d) Start of Path (%.2f,%.2f) -> ", Orgin, Target, path->PathPoints[i]->Xcord, path->PathPoints[i]->Ycord);
-        }
-        else if(i == path->PathPoints.size() - 1)
-        {
-            //cout << "(" << path->PathPoints[i]->Xcord << "," << path->PathPoints[i]->Ycord << ") End of Path\n" ;
-            fprintf(fp, "(%.2f,%.2f) End of Path \n", path->PathPoints[i]->Xcord, path->PathPoints[i]->Ycord);
-        }
-        else
-        {
-            //cout << "(" << path->PathPoints[i]->Xcord << "," << path->PathPoints[i]->Ycord << ")";
-            fprintf(fp, "(%.2f,%.2f) -> ", path->PathPoints[i]->Xcord, path->PathPoints[i]->Ycord);
 
-        }
-    }
-}
-
-void moveToPoint(Point *Target, bool frontfacing, int Dspeed, int Tspeed)
-{   float targetThreshold = 7; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
+void moveToPoint(Point* Target, bool frontfacing, int Dspeed, int Tspeed)
+{   float targetThreshold = 25.4; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
     bool arrivedtoTarget = false;
     while(!arrivedtoTarget)
     {
@@ -132,8 +98,8 @@ void moveToPoint(Point *Target, bool frontfacing, int Dspeed, int Tspeed)
         {
             Chassis.drive_distance(-distance, 180 + intialHeading, voltage, voltage);
         }
-        float dist = (Target->Xcord - GPS.xPosition(distanceUnits::cm)) * (Target->Xcord - GPS.xPosition(distanceUnits::cm)) + (Target->Ycord - GPS.xPosition(distanceUnits::cm)) * (Target->Ycord - GPS.xPosition(distanceUnits::cm));
-        if (dist <= targetThreshold * targetThreshold)
+    float dist = (GPS.xPosition(distanceUnits::cm) - Target->Xcord) * (GPS.xPosition(distanceUnits::cm) - Target->Xcord) + (GPS.yPosition(distanceUnits::cm) -Target->Ycord ) * (GPS.xPosition(distanceUnits::cm) - Target->Ycord );
+        if (dist <= (targetThreshold * targetThreshold))
         {
                 arrivedtoTarget = true;
         }
@@ -145,29 +111,44 @@ void moveToPoint(Point *Target, bool frontfacing, int Dspeed, int Tspeed)
 void moveToPosition(double target_x, double target_y, double target_theta = -1, bool frontfacing = true, int Dspeed = 75, int Tspeed = 75)
 {
     Point Target(target_x, target_y);
-    //Point CurrentPoint(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm));
-    Point CurrentPoint(-40, -40);
+    Point CurrentPoint(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm));
+    //Point CurrentPoint(-40, -40);
     if (!field.Check_Barrier_Intersects(CurrentPoint, Target))
     {
-        fprintf(fp,"No Barrier Intersection found moving to point");
-        //moveToPoint(&Target,frontfacing,Dspeed,Tspeed);
+        fprintf(fp,"No Barrier Intersection found moving to point\n");
+        moveToPoint(&Target,frontfacing,Dspeed,Tspeed);
     }
     else
     {
-        fprintf(fp,"Barrier Intersection found! Creating Path to Target");
-
+        fprintf(fp,"Barrier Intersection found! Creating Path to Target\n");
         Path Path2Follow = field.Create_Path_to_Target(Target);
-        Print_Path(&Path2Follow);
-
         for (int i = 0; i < Path2Follow.PathPoints.size(); i++)
         {
-            //moveToPoint(Path2Follow.PathPoints[i], frontfacing, Dspeed, Tspeed);
+            moveToPoint(Path2Follow.PathPoints[i], frontfacing, Dspeed, Tspeed);
         }
     }
     if (target_theta != -1)
     {
         turnTo(target_theta);
     }
+}
+bool OnSide(double target_x, bool checkside)
+{
+    if(checkside)
+    {
+        if(field.Side == vex::color::red)
+        {
+            if(target_x < 0)
+                return false;
+        }
+        else if(field.Side == vex::color::blue)
+        {
+            if(target_x > 0)
+                return false;
+        }
+    }
+    return true; 
+
 }
 
 //Function to find the target object based on type and return its record
@@ -182,11 +163,11 @@ DETECTION_OBJECT findTarget()
         double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
         if (distance < lowestDist)
         {
-            if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
-            {    
-                    target = local_map.detections[i];
-                    lowestDist = distance;            
-            }
+            //if(!field.In_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y,field.Goal_Zone))
+            //{    
+                target = local_map.detections[i];
+                lowestDist = distance;            
+            //}
         }
     }
    
@@ -195,8 +176,8 @@ DETECTION_OBJECT findTarget()
 }
 
 
-// //Function to find the target object based on type and return its record
-// DETECTION_OBJECT findTarget()
+//Function to find the target object based on type and return its record
+// DETECTION_OBJECT findTarget(bool check4side)
 // {
 //     DETECTION_OBJECT target;
 //     static AI_RECORD local_map;
@@ -204,10 +185,10 @@ DETECTION_OBJECT findTarget()
 //     double lowestDist = 1000000;
 //     for (int i = 0; i < local_map.detectionCount; i++)
 //     {
-//         double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
-//         if (distance < lowestDist)
+//         if(!field.In_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y,field.Goal_Zone) && OnSide(local_map.detections[i].mapLocation.x,check4side))
 //         {
-//             if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
+//             double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
+//             if (distance < lowestDist)
 //             {
 //                 if(field.Side == vex::color::red)
 //                 {
@@ -233,53 +214,49 @@ DETECTION_OBJECT findTarget()
 //             }
 //         }
 //     }
-   
-//     fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",target.mapLocation.x*100, target.mapLocation.y*100);
+//     fprintf(fp,"Target Found @ (%.2f, %.2f)\n",target.mapLocation.x*100, target.mapLocation.y*100);
 //     return target;
 // }
 
 
 
 // Function to retrieve an object based on detection
-void getObject()
+bool getObject()
 {
-    Intake.setVelocity(100,vex::pct);
-    Balldetect.objectDetectThreshold(100);
     bool HoldingBall = false; 
     float turn_step = 45;
-    DETECTION_OBJECT Triball = findTarget();
-    fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",Triball.mapLocation.x*100, Triball.mapLocation.y*100);
-   
+    DETECTION_OBJECT Triball;
+    int turn_iter;
+    int hold_iter = 0 ;
     while(!HoldingBall)
     {
+        Triball = findTarget();
+        turn_iter = 0;
         while(Triball.mapLocation.x && Triball.mapLocation.y == 0)
         {
             Chassis.turn_to_angle(GPS.heading()+turn_step);
             Triball = findTarget();
-            fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",Triball.mapLocation.x*100, Triball.mapLocation.y*100);
+            turn_iter = turn_iter + 1 ;
         }
-    
         Intake.spin(vex::directionType::fwd,100,vex::velocityUnits::pct);
         moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100,true);
+        if(Balldetect.isNearObject())
+        {
+            Intake.stop(hold);
+            return true;
 
-        Triball = findTarget();
+        }
     }
+    return false;
 
 }
 
 void ScoreBall()
-{
-    if (GPS.xPosition(distanceUnits::cm) < 0.00) // we are on right side(Blue Goal)
-    {
-        moveToPosition(-61.35, 0.00, 90);
-    }
-    else if (GPS.xPosition(distanceUnits::cm) > 0.00) // we are on right side(Blue Goal)
-    {
-        moveToPosition(61.35, 0.00, 270);
-    }
-    Intake.spin(vex::directionType::rev);
+{  
+    moveToPosition(61.35,0.00,90);
+   
+    Intake.spin(vex::directionType::rev,100,vex::velocityUnits::pct);
     Chassis.drive_distance(25);
     Intake.stop(coast);
     Chassis.drive_distance(-15);
 }
-
