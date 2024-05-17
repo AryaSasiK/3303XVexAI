@@ -16,7 +16,15 @@ using namespace std;
 using namespace vex;
 
 
+//#define  MANAGER_ROBOT    1
 
+#if defined(MANAGER_ROBOT)
+#pragma message("building for the manager")
+ai::robot_link       link( PORT11, "robot_32456_1", linkType::manager );
+#else
+#pragma message("building for the worker")
+ai::robot_link       link( PORT11, "robot_32456_1", linkType::worker );
+#endif
 
 //Realsense Offsets (15in, 24in)
 // X(0.25in,0in), Y(-4.25in,12in), Z(9.125in,11in), Heading(0,0), Elevation(0,0)
@@ -25,11 +33,9 @@ using namespace vex;
 // X(0,0), Y(-6.5in,8in), Z(9.875,11in), Heading(180,180)
 
 
-brain Brain;
-controller Controller1 = controller(primary);
 // ---- START CONFIGURED DEVICES ----
 
-// //24in Robot Specific Objects
+//24in Robot Specific Objects
 // motor leftDriveA = motor(PORT9, ratio6_1, true);  
 // motor leftDriveB = motor(PORT10, ratio6_1, true);   
 // motor leftDriveC = motor(PORT7, ratio6_1, true);   
@@ -40,12 +46,13 @@ controller Controller1 = controller(primary);
 // motor rightDriveC = motor(PORT1, ratio6_1, false);
 // motor rightDriveD = motor(PORT2, ratio6_1, false);
 // const int32_t InertialPort = PORT19;
-// gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
 // const int32_t HangAPort = PORT14;
 // const int32_t HangBPort = PORT13;
 // const int32_t IntakePort = PORT12;
+// const int32_t GPSPort = PORT20;
+// double GPS_y_Offset = 203.2;
 // motor Catapult = motor(PORT11,ratio36_1,true);
-//double Robot_x_Offset = 25.4;
+// double Robot_x_Offset = 25.4;
 
 
 //15in Robot Specific Objects
@@ -58,10 +65,11 @@ motor rightDriveB = motor(PORT2, ratio6_1, false);
 motor rightDriveC = motor(PORT7, ratio6_1, true);
 motor rightDriveD = motor(PORT4, ratio6_1, true);
 const int32_t InertialPort = PORT16;
-gps GPS = gps(PORT3, 0.0, -146.0, mm, 180);
 const int32_t HangAPort = PORT16;
 const int32_t HangBPort = PORT16;
 const int32_t IntakePort = PORT11;
+const int32_t GPSPort = PORT3;
+double GPS_y_Offset = -146.0;
 double Robot_x_Offset = 19;
 
 
@@ -70,15 +78,18 @@ optical Balldetect = optical(PORT14);
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
 Drive Chassis(ZERO_TRACKER_NO_ODOM,LeftDriveSmart,RightDriveSmart,InertialPort,3.125,0.6,360,PORT1,-PORT2,PORT3,-PORT4,3,2.75,-2,1,-2.75,5.5);
+gps GPS = gps(GPSPort, 0.0, GPS_y_Offset, mm, 180);
 motor HangA = motor(HangAPort, ratio36_1, false);
 motor HangB = motor(HangBPort, ratio36_1, true);
 motor_group Hang = motor_group(HangA, HangB);
 motor Intake = motor(IntakePort, ratio6_1, true);
-
 Field field(purple,Robot_x_Offset);
 FILE *fp = fopen("/dev/serial2","wb");
-// A global instance of competition
+
+brain Brain;
+controller Controller1 = controller(primary);
 competition Competition;
+
 // create instance of jetson class to receive location and other
 // data from the Jetson nano
 ai::jetson  jetson_comms;
@@ -90,17 +101,6 @@ ai::jetson  jetson_comms;
 // The Demo is symetrical, we send the same data and display the same status on both
 // manager and worker robots
 // Comment out the following definition to build for the worker robot
-#define  MANAGER_ROBOT    1
-
-#if defined(MANAGER_ROBOT)
-#pragma message("building for the manager")
-ai::robot_link       link( PORT11, "robot_32456_1", linkType::manager );
-#else
-#pragma message("building for the worker")
-ai::robot_link       link( PORT11, "robot_32456_1", linkType::worker );
-#endif
-
-
 
 // ---- END CONFIGURED DEVICES ----
 
