@@ -200,7 +200,7 @@ void testing_tuning(void)
 
 void auto_Isolation(void) 
 {
-  DETECTION_OBJECT triball = findTarget();
+
 }
 
 
@@ -268,17 +268,6 @@ int main() {
   //
   //FILE *fp = fopen("/dev/serial2","wb");
 
-  // Path test;
-  // Point* temp;
-  // for(int i = 0; i < field.Path2Snap2.size();i++)
-  // {
-  //   temp = new Point(field.Path2Snap2[i]->Xcord,field.Path2Snap2[i]->Ycord);
-  //   test.PathPoints.push_back(temp);
-  // }
-
-  // DETECTION_OBJECT target = findTarget();
-  // double TargetX = target.mapLocation.x;
-  // double TargerY = target.mapLocation.y;
   this_thread::sleep_for(loop_time);
   int counter = 0 ;
   while(1) 
@@ -286,23 +275,19 @@ int main() {
 
       // get last map data
       jetson_comms.get_data( &local_map );
-
       // set our location to be sent to partner robot
       link.set_remote_location( local_map.pos.x, local_map.pos.y, local_map.pos.az, local_map.pos.status );
 
-      //fprintf(fp, "%.2f %.3f %.2f\n", local_map.pos.x, local_map.pos.y, local_map.pos.az);
       counter += 1 ;
       if (counter > 15)
       {
-        //testing_tuning();
-        //Print_Path(&test);
-        //findTarget();
-        //(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",TargetX, TargerY  );
+        //testing_tuning();  
         //fprintf(fp,"\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
-        //field.Print_Lines();
-        //fprintf(fp,"\n\n\n\n GPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
+        //fprintf(fp,"\nGPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
         counter = 0 ;
       }
+
+
       // request new data    
       // NOTE: This request should only happen in a single task.    
       jetson_comms.request_map();

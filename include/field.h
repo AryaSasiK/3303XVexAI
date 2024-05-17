@@ -78,11 +78,11 @@ public:
     vex::color Side;
     pair<Point, double> Find_Closest_Point_In_Line(Point point, Line* LineSeg);
     pair<Point, int> Find_Point_on_Path(Point Target);
-    bool Check_Barrier_Intersects(Point CurrentPos, Point PointOnLine);
+    bool Check_Barrier_Intersects(Point CurrentPos, Point PointOnLine, bool checkoffsets);
     bool In_Goal_Zone(float Ball_x, float Ball_y);
     Path Create_Path_to_Target(Point Target);
-    const Line* Find_Goal_Side();
-    void Print_Lines();
+
+    
 };
 
 

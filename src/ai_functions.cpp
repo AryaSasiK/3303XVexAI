@@ -82,7 +82,7 @@ void turnTo(double angle, int speed = 75, bool frontfacing = true)
 }
 
 void moveToPoint(Point* Target, bool frontfacing, int Dspeed, int Tspeed)
-{   float targetThreshold = 12.7; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
+{   float targetThreshold = 15; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
     bool arrivedtoTarget = false;
     while(!arrivedtoTarget)
     {
@@ -114,7 +114,7 @@ void moveToPosition(double target_x, double target_y, double target_theta = -1, 
     Point Target(target_x, target_y);
     Point CurrentPoint(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm));
     //Point CurrentPoint(-40, -40);
-    if (!field.Check_Barrier_Intersects(CurrentPoint, Target))
+    if (!field.Check_Barrier_Intersects(CurrentPoint, Target,true))
     {
         fprintf(fp,"No Barrier Intersection found moving to point\n");
         moveToPoint(&Target,frontfacing,Dspeed,Tspeed);
@@ -123,7 +123,7 @@ void moveToPosition(double target_x, double target_y, double target_theta = -1, 
     {
         fprintf(fp,"Barrier Intersection found! Creating Path to Target\n");
         Path Path2Follow = field.Create_Path_to_Target(Target);
-        for (int i = 0; i < Path2Follow.PathPoints.size(); i++)
+        for (int i = 1; i < Path2Follow.PathPoints.size(); i++)
         {
             moveToPoint(Path2Follow.PathPoints[i], frontfacing, Dspeed, Tspeed);
         }
@@ -133,93 +133,97 @@ void moveToPosition(double target_x, double target_y, double target_theta = -1, 
         turnTo(target_theta);
     }
 }
-bool OnSide(double target_x, bool checkside)
+
+bool On_Goal_Side(double target_x, bool checkside)
 {
     if(checkside)
     {
-        if(field.Side == vex::color::red)
+        if(!field.Blue_Side)
         {
             if(target_x < 0)
+            {
                 return false;
+            }
         }
-        else if(field.Side == vex::color::blue)
+        else if(!field.Red_Side)
         {
             if(target_x > 0)
+            {
                 return false;
+            }
         }
     }
     return true; 
-
 }
 
 //Function to find the target object based on type and return its record
-DETECTION_OBJECT findTarget()
+DETECTION_OBJECT findTarget(bool checkside = false)
 {
     DETECTION_OBJECT target;
     static AI_RECORD local_map;
     jetson_comms.get_data(&local_map);
     double lowestDist = 1000000;
-    bool goal_check;
-
     for (int i = 0; i < local_map.detectionCount; i++)
     {
-        if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
+        if(On_Goal_Side(local_map.detections[i].mapLocation.x,checkside))
         {
-            if(field.Blue_Side)
+            if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
             {
-                if(local_map.detections[i].classID == 0 || local_map.detections[i].classID == 2)
+                if(field.Blue_Side)
                 {
-                    double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
-                    if (distance < lowestDist)
+                    if(local_map.detections[i].classID == 0 || local_map.detections[i].classID == 2)
                     {
-                        target = local_map.detections[i];
-                        lowestDist = distance;     
+                        double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
+                        if (distance < lowestDist)
+                        {
+                            target = local_map.detections[i];
+                            lowestDist = distance;     
+                        }
                     }
                 }
-            }
-            if(field.Red_Side)
-            {
-                if(local_map.detections[i].classID == 0 || local_map.detections[i].classID == 1)
+                if(field.Red_Side)
                 {
-                    double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
-                    if (distance < lowestDist)
+                    if(local_map.detections[i].classID == 0 || local_map.detections[i].classID == 1)
                     {
-                        target = local_map.detections[i];
-                        lowestDist = distance;     
+                        double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
+                        if (distance < lowestDist)
+                        {
+                            target = local_map.detections[i];
+                            lowestDist = distance;     
+                        }
                     }
                 }
-            }
-        }  
+            }  
+        }
     }
     return target;
 }
 
 
 // Function to retrieve an object based on detection
-bool getObject()
+bool getObject(bool scoreobject = false)
 {
     bool HoldingBall = false; 
     float turn_step = 45;
     DETECTION_OBJECT Triball;
     int turn_iter;
-    int hold_iter = 0 ;
     while(!HoldingBall)
     {
-        Triball = findTarget();
+        Triball = findTarget(scoreobject);
         turn_iter = 0;
-        while(Triball.mapLocation.x && Triball.mapLocation.y == 0)
+        while(Triball.mapLocation.x && Triball.mapLocation.y == 0 )
         {
             Chassis.turn_to_angle(GPS.heading()+turn_step);
-            Triball = findTarget();
+            Triball = findTarget(scoreobject);
             turn_iter = turn_iter + 1 ;
         }
         Intake.spin(vex::directionType::fwd,100,vex::velocityUnits::pct);
         moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100,true);
         if(Balldetect.isNearObject())
         {
+            wait(500,msec);
             Intake.stop(hold);
             return true;
-
         }
     }
     return false;
