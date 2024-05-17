@@ -111,7 +111,7 @@ void Path::calcPathLength()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Field::Field(vex::color Alliance_Color)
+Field::Field(vex::color Alliance_Color, double Robot_Offset)
 {
 
     if (Alliance_Color == vex::color::red)
@@ -129,6 +129,9 @@ Field::Field(vex::color Alliance_Color)
         Red_Side = true;
         Blue_Side = true;
     }
+
+    Offset = Robot_Offset;
+
     Path2Snap2.push_back(&Q1_Alley);
     Path2Snap2.push_back(&Q1_Match_Load_Center);
     Path2Snap2.push_back(&Q1_Goal_Zone);
@@ -228,18 +231,60 @@ bool Check_Intersects(Point CurrentPos, Point PointOnLine, Line BarrierLine)
     return false; // Doesn't fall in any of the above cases
 }
 
-bool Field::Check_Barrier_Intersects(Point CPos, Point POL, bool checkoffsets = false)
+Line Field::FindOffsetLines(Point P1, Point P2, bool offsettype)
 {
-    // fprintf(fp,"Current Pos (%.2f, %.2f), Point on Line(%.2f, %.2f)",CPos.Xcord,CPos.Ycord,POL.Xcord,POL.Ycord);
+
+
+    double dx = P2.Xcord - P1.Xcord;
+    double dy = P2.Ycord - P1.Ycord;
+    double Length = sqrt(pow(dx,2) + pow(dy,2));
+    double Dx = dy * Offset/Length;
+    double Dy = -dx * Offset/Length;
+    Point ModP1;
+    Point ModP2;
+
+    if(offsettype)
+    {
+        ModP1 = Point(P1.Xcord+Dx,P1.Ycord+Dy);
+        ModP2 = Point(P2.Xcord+Dx,P2.Ycord+Dy);
+    }
+    else
+    {
+        ModP1 = Point(P1.Xcord-Dx,P1.Ycord-Dy);
+        ModP2 = Point(P2.Xcord-Dx,P2.Ycord-Dy);
+    }
+
+    Line ParallelLine(ModP1,ModP2);
+
+    return ParallelLine;
+}
+
+
+bool Field::Check_Barrier_Intersects(Point CPos, Point POL, bool checkoffsets = false)
+{   
+    Line LineA = FindOffsetLines(CPos,POL,true);
+    Line LineB = FindOffsetLines(CPos,POL,false);
+        // fprintf(fp,"Current Pos (%.2f, %.2f), Point on Line(%.2f, %.2f)",CPos.Xcord,CPos.Ycord,POL.Xcord,POL.Ycord);
     bool Intersect = false;
     for (int i = 0; i < Field_Barriers.size(); i++)
     {
         for (int j = 0; j < Field_Barriers[i]->BarrierLines.size(); j++)
         {
-            Intersect = Check_Intersects(CPos, POL, Field_Barriers[i]->BarrierLines[j]);
-            if (Intersect)
+            
+            if (Check_Intersects(CPos, POL, Field_Barriers[i]->BarrierLines[j]))
             {
-                return Intersect;
+                return true;
+            }
+            if(checkoffsets)
+            {
+                if(Check_Intersects(LineA.LinePoints.first, LineA.LinePoints.second, Field_Barriers[i]->BarrierLines[j]))
+                {
+                    return true;
+                }
+                if(Check_Intersects(LineB.LinePoints.first, LineB.LinePoints.second, Field_Barriers[i]->BarrierLines[j]))
+                {
+                    return true;
+                }
             }
         }
     }
@@ -420,3 +465,5 @@ Path Field::Create_Path_to_Target(Point Target)
 
     return DrivePath;
 }
+
+

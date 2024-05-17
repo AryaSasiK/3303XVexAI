@@ -70,7 +70,8 @@ class Field
 public:
     bool Red_Side;
     bool Blue_Side;
-    Field(vex::color Alliance_Color);
+    double Offset;
+    Field(vex::color Alliance_Color, double Robot_Offset);
     vector<Point*> Path2Snap2;
     vector<Line*> P2S2_Lines;
     vector<const Barrier *> Field_Barriers;
@@ -81,6 +82,7 @@ public:
     bool Check_Barrier_Intersects(Point CurrentPos, Point PointOnLine, bool checkoffsets);
     bool In_Goal_Zone(float Ball_x, float Ball_y);
     Path Create_Path_to_Target(Point Target);
+    Line FindOffsetLines(Point P1, Point P2, bool offsettype);
 
     
 };

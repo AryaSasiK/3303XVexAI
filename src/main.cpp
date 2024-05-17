@@ -25,11 +25,11 @@ using namespace vex;
 // X(0,0), Y(-6.5in,8in), Z(9.875,11in), Heading(180,180)
 
 
-// ---- START CONFIGURED DEVICES ----
-Field field(purple);
 brain Brain;
 controller Controller1 = controller(primary);
-//24in
+// ---- START CONFIGURED DEVICES ----
+
+// //24in Robot Specific Objects
 // motor leftDriveA = motor(PORT9, ratio6_1, true);  
 // motor leftDriveB = motor(PORT10, ratio6_1, true);   
 // motor leftDriveC = motor(PORT7, ratio6_1, true);   
@@ -45,14 +45,14 @@ controller Controller1 = controller(primary);
 // const int32_t HangBPort = PORT13;
 // const int32_t IntakePort = PORT12;
 // motor Catapult = motor(PORT11,ratio36_1,true);
+//double Robot_x_Offset = 25.4;
 
 
-// //15in
+//15in Robot Specific Objects
 motor leftDriveA = motor(PORT20, ratio6_1, true);  
 motor leftDriveB = motor(PORT10, ratio6_1, true);   
 motor leftDriveC = motor(PORT19, ratio6_1, false);   
 motor leftDriveD = motor(PORT9, ratio6_1, false);   
-
 motor rightDriveA = motor(PORT12, ratio6_1, false);
 motor rightDriveB = motor(PORT2, ratio6_1, false);
 motor rightDriveC = motor(PORT7, ratio6_1, true);
@@ -62,7 +62,10 @@ gps GPS = gps(PORT3, 0.0, -146.0, mm, 180);
 const int32_t HangAPort = PORT16;
 const int32_t HangBPort = PORT16;
 const int32_t IntakePort = PORT11;
+double Robot_x_Offset = 19;
 
+
+//Universal Objects (Do not comment out)
 optical Balldetect = optical(PORT14);
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
@@ -72,7 +75,7 @@ motor HangB = motor(HangBPort, ratio36_1, true);
 motor_group Hang = motor_group(HangA, HangB);
 motor Intake = motor(IntakePort, ratio6_1, true);
 
-
+Field field(purple,Robot_x_Offset);
 FILE *fp = fopen("/dev/serial2","wb");
 // A global instance of competition
 competition Competition;
@@ -96,6 +99,8 @@ ai::robot_link       link( PORT11, "robot_32456_1", linkType::manager );
 #pragma message("building for the worker")
 ai::robot_link       link( PORT11, "robot_32456_1", linkType::worker );
 #endif
+
+
 
 // ---- END CONFIGURED DEVICES ----
 
