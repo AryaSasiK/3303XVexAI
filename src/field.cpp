@@ -99,7 +99,21 @@ Barrier CenterBarrier(Blue_Alley,Red_Alley,Center_Bar);
 Field::Field(vex::color Alliance_Color)
 {
 
-    Side = Alliance_Color;
+    if(Alliance_Color == vex::color::red)
+    {
+        Red_Side = true; 
+        Blue_Side = false;
+    }
+    else if(Alliance_Color == vex::color::blue)
+    {
+        Blue_Side = true; 
+        Red_Side = false;
+    }
+    else if(Alliance_Color == vex::color::purple)
+    {
+        Red_Side = true;
+        Blue_Side = true; 
+    }
     Path2Snap2.push_back(&Q1_Alley);
     Path2Snap2.push_back(&Q1_Match_Load_Center);
     Path2Snap2.push_back(&Q1_Goal_Zone);
@@ -219,31 +233,19 @@ bool Field::Check_Barrier_Intersects(Point CPos, Point POL)
     return Intersect;
 }
 
-void Field::Print_Lines()
+bool Field::In_Goal_Zone(float Ball_x, float Ball_y)
 {
-    Point Line_PointA = Field_Barriers[1]->BarrierLines[0].LinePoints.first;
-    Point Line_PointB = Field_Barriers[1]->BarrierLines[0].LinePoints.second;
-    fprintf(fp,"Point A: (%.2f, %.2f) Point B: (%.2f, %.2f)\n",Line_PointA.Xcord,Line_PointA.Ycord,Line_PointB.Xcord,Line_PointB.Ycord); 
-
-
-
-
-//    fprintf(fp,"Point A: (%.2f, %.2f) Point B: (%.2f, %.2f)\n",Q1_LineB.LinePoint.first.Xcord,Q1_LineA.LinePoint.first.Ycord, Q1_LineA.LinePoint.second.Xcord, Q1_LineA.LinePoint.first.Ycord); 
-//     fprintf(fp,"Point A: (%.2f, %.2f) Point B: (%.2f, %.2f)\n",Q1_LineB.LinePoint.first.Xcord,Q1_LineB.LinePoint.first.Ycord, Q1_LineB.LinePoint.second.Xcord, Q1_LineB.LinePoint.first.Ycord);
-//     fprintf(fp,"Point A: (%.2f, %.2f) Point B: (%.2f, %.2f)\n",Q1_LineC.LinePoint.first.Xcord,Q1_LineC.LinePoint.first.Ycord, Q1_LineC.LinePoint.second.Xcord, Q1_LineC.LinePoint.first.Ycord);
-}
-
-bool Field::In_Zone(double Ball_x, double Ball_y,vector<const Point*> Zone)
-{
-    int num_vertices = Zone.size();
-    double x = abs(Ball_x), y = Ball_y;
+    Ball_x = Ball_x *100;
+    Ball_y = Ball_y *100;
+    int num_vertices = Goal_Zone.size();
+    float x = fabs(Ball_x), y = Ball_y;
     bool inside = false;
-    Point P1(Zone[0]->Xcord,Zone[0]->Ycord);
+    Point P1(Goal_Zone[0]->Xcord,Goal_Zone[0]->Ycord);
     Point P2;
     // Loop through each edge in the polygon
     for (int i = 1; i <= num_vertices; i++) 
     {
-       P2 = Point(Zone[i % num_vertices]->Xcord,Zone[i % num_vertices]->Ycord);
+       P2 = Point(Goal_Zone[i % num_vertices]->Xcord,Goal_Zone[i % num_vertices]->Ycord);
         if (y > min(P1.Ycord, P2.Ycord)) 
         {
             if (y <= max(P1.Ycord, P2.Ycord)) 
@@ -259,6 +261,14 @@ bool Field::In_Zone(double Ball_x, double Ball_y,vector<const Point*> Zone)
             }
         }
         P1 = P2;
+    }
+    if(inside)
+    {
+        fprintf(fp, "Triaball @ (%.2f, %.2f) is inside a goal", Ball_x, Ball_y);
+    }
+    else 
+    {
+        fprintf(fp, "Triaball @ (%.2f, %.2f) is not inside a goal", Ball_x, Ball_y);
     }
     return inside;
 }

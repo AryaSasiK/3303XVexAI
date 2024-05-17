@@ -40,7 +40,7 @@ controller Controller1 = controller(primary);
 // motor rightDriveC = motor(PORT1, ratio6_1, false);
 // motor rightDriveD = motor(PORT2, ratio6_1, false);
 // const int32_t InertialPort = PORT19;
-// gps GPS = gps(PORT20, 0.0, -146.0, mm, 180);
+// gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
 // const int32_t HangAPort = PORT14;
 // const int32_t HangBPort = PORT13;
 // const int32_t IntakePort = PORT12;
@@ -200,11 +200,7 @@ void testing_tuning(void)
 
 void auto_Isolation(void) 
 {
-
-    if(getObject())
-    {
-      ScoreBall();
-    }
+  DETECTION_OBJECT triball = findTarget();
 }
 
 
@@ -264,7 +260,6 @@ int main() {
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(auto_Isolation);
   //Competition.autonomous(autonomousMain);
-  Competition.drivercontrol(usercontrol);
   // print through the controller to the terminal (vexos 1.0.12 is needed)
   // As USB is tied up with Jetson communications we cannot use
   // printf for debug.  If the controller is connected

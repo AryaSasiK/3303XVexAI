@@ -58,16 +58,18 @@ public:
 class Path
 {
 public:
-    
+    double pathlength;
     vector <Point*> PathPoints;
     Path() {}
     ~Path() {}
+    void calcPathLength();
 };
 
 class Field
 {
 public:
-    
+    bool Red_Side;
+    bool Blue_Side;
     Field(vex::color Alliance_Color);
     vector<Point*> Path2Snap2;
     vector<Line*> P2S2_Lines;
@@ -77,7 +79,7 @@ public:
     pair<Point, double> Find_Closest_Point_In_Line(Point point, Line* LineSeg);
     pair<Point, int> Find_Point_on_Path(Point Target);
     bool Check_Barrier_Intersects(Point CurrentPos, Point PointOnLine);
-    bool In_Zone(double Ball_x, double Ball_y, vector<const Point*> Zone);
+    bool In_Goal_Zone(float Ball_x, float Ball_y);
     Path Create_Path_to_Target(Point Target);
     const Line* Find_Goal_Side();
     void Print_Lines();

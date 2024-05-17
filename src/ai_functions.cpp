@@ -82,10 +82,15 @@ void turnTo(double angle, int speed = 75, bool frontfacing = true)
 }
 
 void moveToPoint(Point* Target, bool frontfacing, int Dspeed, int Tspeed)
-{   float targetThreshold = 25.4; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
+{   float targetThreshold = 12.7; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
     bool arrivedtoTarget = false;
     while(!arrivedtoTarget)
     {
+        float dist = (GPS.xPosition(distanceUnits::cm) - Target->Xcord) * (GPS.xPosition(distanceUnits::cm) - Target->Xcord) + (GPS.yPosition(distanceUnits::cm) -Target->Ycord ) * (GPS.xPosition(distanceUnits::cm) - Target->Ycord );
+        if (dist <= (targetThreshold * targetThreshold))
+        {
+                arrivedtoTarget = true;
+        }
         float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), Target->Xcord, Target->Ycord);
         turnTo(intialHeading, Tspeed, frontfacing);
         float distance = distanceTo(Target->Xcord, Target->Ycord);
@@ -98,11 +103,7 @@ void moveToPoint(Point* Target, bool frontfacing, int Dspeed, int Tspeed)
         {
             Chassis.drive_distance(-distance, 180 + intialHeading, voltage, voltage);
         }
-    float dist = (GPS.xPosition(distanceUnits::cm) - Target->Xcord) * (GPS.xPosition(distanceUnits::cm) - Target->Xcord) + (GPS.yPosition(distanceUnits::cm) -Target->Ycord ) * (GPS.xPosition(distanceUnits::cm) - Target->Ycord );
-        if (dist <= (targetThreshold * targetThreshold))
-        {
-                arrivedtoTarget = true;
-        }
+    
     }
 
 }
@@ -158,66 +159,40 @@ DETECTION_OBJECT findTarget()
     static AI_RECORD local_map;
     jetson_comms.get_data(&local_map);
     double lowestDist = 1000000;
+    bool goal_check;
+
     for (int i = 0; i < local_map.detectionCount; i++)
     {
-        double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
-        if (distance < lowestDist)
+        if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
         {
-            //if(!field.In_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y,field.Goal_Zone))
-            //{    
-                target = local_map.detections[i];
-                lowestDist = distance;            
-            //}
-        }
+            if(field.Blue_Side)
+            {
+                if(local_map.detections[i].classID == 0 || local_map.detections[i].classID == 2)
+                {
+                    double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
+                    if (distance < lowestDist)
+                    {
+                        target = local_map.detections[i];
+                        lowestDist = distance;     
+                    }
+                }
+            }
+            if(field.Red_Side)
+            {
+                if(local_map.detections[i].classID == 0 || local_map.detections[i].classID == 1)
+                {
+                    double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
+                    if (distance < lowestDist)
+                    {
+                        target = local_map.detections[i];
+                        lowestDist = distance;     
+                    }
+                }
+            }
+        }  
     }
-   
-    fprintf(fp,"\nTarget Found ||  X:%.2f cm Y:%.2f cm\n",target.mapLocation.x*100, target.mapLocation.y*100);
     return target;
 }
-
-
-//Function to find the target object based on type and return its record
-// DETECTION_OBJECT findTarget(bool check4side)
-// {
-//     DETECTION_OBJECT target;
-//     static AI_RECORD local_map;
-//     jetson_comms.get_data(&local_map);
-//     double lowestDist = 1000000;
-//     for (int i = 0; i < local_map.detectionCount; i++)
-//     {
-//         if(!field.In_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y,field.Goal_Zone) && OnSide(local_map.detections[i].mapLocation.x,check4side))
-//         {
-//             double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
-//             if (distance < lowestDist)
-//             {
-//                 if(field.Side == vex::color::red)
-//                 {
-//                     if(local_map.detections[i].classID == 1 || local_map.detections[i].classID == 0)
-//                     {
-//                         target = local_map.detections[i];
-//                         lowestDist = distance;
-//                     }
-//                 }
-//                 else if(field.Side == vex::color::blue)
-//                 {
-//                     if(local_map.detections[i].classID == 2 || local_map.detections[i].classID == 0)
-//                     {
-//                         target = local_map.detections[i];
-//                         lowestDist = distance;
-//                     }
-//                 }
-//                 else if(field.Side == vex::color::purple)
-//                 {
-//                     target = local_map.detections[i];
-//                     lowestDist = distance;
-//                 }
-//             }
-//         }
-//     }
-//     fprintf(fp,"Target Found @ (%.2f, %.2f)\n",target.mapLocation.x*100, target.mapLocation.y*100);
-//     return target;
-// }
-
 
 
 // Function to retrieve an object based on detection
