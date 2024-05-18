@@ -30,38 +30,38 @@ static Line
     Red_Alley(Red_Alley1, Red_Alley2);
 
 // Goals Ref Cordinates(cm)
-double
+static double
     Goal_X = 119.68,
     Goal_Y = 59.85;
 
-Point
+static Point
     Red_FL_Corner(Goal_X, Goal_Y),        // Front Left Corner
     Red_BL_Corner(Field_XY_Lim, Goal_Y),  // Back Left Corner
     Red_FR_Corner(Goal_X, -Goal_Y),       // Front Right Corner
     Red_BR_Corner(Field_XY_Lim, -Goal_Y); // Back Right Corner
-Line
+static Line
     Red_Front_Side(Red_FL_Corner, Red_FR_Corner), // Front Red Line
     Red_Left_Side(Red_FL_Corner, Red_BL_Corner),  // Left Red Line
     Red_Right_Side(Red_FR_Corner, Red_BR_Corner); // Right Red Line
 
-Point
+static Point
     Blue_FL_Corner(-Goal_X, -Goal_Y),       // Front Left Corner
     Blue_BL_Corner(-Field_XY_Lim, -Goal_Y), // Back Left Corner
     Blue_FR_Corner(-Goal_X, Goal_Y),        // Right - Front Blue corner
     Blue_BR_Corner(-Field_XY_Lim, Goal_Y);  // Right - Rear Blue corner
-Line
+static Line
     Blue_Front_Side(Blue_FL_Corner, Blue_FR_Corner), // Front Blue Line
     Blue_Left_Side(Blue_FL_Corner, Blue_BL_Corner),  // Left Blue Line
     Blue_Right_Side(Blue_FR_Corner, Blue_BR_Corner); // Right Blue Line
 
 // Path 2 Snap 2 Ref Cordinates
-double
+static double
     Match_Load_Ref1 = 95.00,
     Match_Load_Ref2 = 150.51,
     Match_Load_Center_XY = 122.75,
     Goal_Zone_XY = 61.35;
 
-Point
+static Point
     Q1_Alley(Match_Load_Ref1, Match_Load_Ref2),
     Q1_Match_Load_Center(Match_Load_Center_XY, Match_Load_Center_XY),
     Q1_Goal_Zone(Goal_Zone_XY, Goal_Zone_XY),
@@ -75,7 +75,7 @@ Point
     Q4_Match_Load_Center(-Match_Load_Center_XY, Match_Load_Center_XY),
     Q4_Alley(-Match_Load_Ref1, Match_Load_Ref2);
 
-Line
+static Line
     Q1_LineA(Q1_Alley, Q1_Match_Load_Center),
     Q1_LineB(Q1_Match_Load_Center, Q1_Goal_Zone),
     Q1_LineC(Q1_Goal_Zone, Q2_Goal_Zone),
@@ -89,9 +89,10 @@ Line
     Q4_LineB(Q4_Match_Load_Center, Q4_Alley),
     Q4_LineC(Q4_Alley, Q1_Alley);
 
-Barrier RedGoal(Red_Front_Side, Red_Left_Side, Red_Right_Side);
-Barrier BlueGoal(Blue_Front_Side, Blue_Left_Side, Blue_Right_Side);
-Barrier CenterBarrier(Blue_Alley, Red_Alley, Center_Bar);
+static Barrier
+    RedGoal(Red_Front_Side, Red_Left_Side, Red_Right_Side),
+    BlueGoal(Blue_Front_Side, Blue_Left_Side, Blue_Right_Side),
+    CenterBarrier(Blue_Alley, Red_Alley, Center_Bar);
 // const Barrier FieldPerimeter(Front_Side_Field,Right_Side_Field,Rear_Side_Field,Left_Side_Field);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -315,14 +316,6 @@ bool Field::In_Goal_Zone(float Ball_x, float Ball_y)
         }
         P1 = P2;
     }
-    // if (inside)
-    // {
-    //     fprintf(fp, "\nTriaball @ (%.2f, %.2f) is inside a goal", Ball_x, Ball_y);
-    // }
-    // else
-    // {
-    //     fprintf(fp, "\nTriaball @ (%.2f, %.2f) is not inside a goal", Ball_x, Ball_y);
-    // }
     return inside;
 }
 
@@ -409,8 +402,8 @@ Path Field::Create_Path_to_Target(Point Target)
         PathB.push_back(i);
     }
     int pos;
-    fprintf(fp, "Current Pos: (%.2f, %.2f) - > Target Pos: (%.2f, %.2f)\n", CurrentPos.Xcord, CurrentPos.Ycord, Target.Xcord, Target.Ycord);
-    fprintf(fp, "First point to drive to is (%.2f, %.2f)\n", Start.first.Xcord, Start.first.Ycord);
+    // fprintf(fp, "Current Pos: (%.2f, %.2f) - > Target Pos: (%.2f, %.2f)\n", CurrentPos.Xcord, CurrentPos.Ycord, Target.Xcord, Target.Ycord);
+    // fprintf(fp, "First point to drive to is (%.2f, %.2f)\n", Start.first.Xcord, Start.first.Ycord);
     
     pathA.PathPoints.push_back(&CurrentPos);
     pathA.PathPoints.push_back(&Start.first);
@@ -443,7 +436,7 @@ Path Field::Create_Path_to_Target(Point Target)
         for(int i = 0; i < pathA.PathPoints.size(); i++)
         {
             DrivePath.PathPoints.push_back(pathA.PathPoints[i]);
-            fprintf(fp, " -> (%.2f, %.2f)", pathA.PathPoints[i]->Xcord, pathA.PathPoints[i]->Ycord);
+            // fprintf(fp, " -> (%.2f, %.2f)", pathA.PathPoints[i]->Xcord, pathA.PathPoints[i]->Ycord);
         }
     }
     else
@@ -451,12 +444,12 @@ Path Field::Create_Path_to_Target(Point Target)
          for(int i = 0; i < pathB.PathPoints.size(); i++)
         {
             DrivePath.PathPoints.push_back(pathB.PathPoints[i]);
-            fprintf(fp, " -> (%.2f, %.2f)", pathB.PathPoints[i]->Xcord, pathB.PathPoints[i]->Ycord);
+            // fprintf(fp, " -> (%.2f, %.2f)", pathB.PathPoints[i]->Xcord, pathB.PathPoints[i]->Ycord);
         }
     }
 
-    fprintf(fp, "- > (%.2f, %.2f) Last point before target ", End.first.Xcord, End.first.Ycord);
-    fprintf(fp, "|| Target point is (%.2f, %.2f)\n", Target.Xcord, Target.Ycord);
+    // fprintf(fp, "- > (%.2f, %.2f) Last point before target ", End.first.Xcord, End.first.Ycord);
+    // fprintf(fp, "|| Target point is (%.2f, %.2f)\n", Target.Xcord, Target.Ycord);
 
     return DrivePath;
 }

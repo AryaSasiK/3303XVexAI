@@ -209,13 +209,13 @@ bool getObject()
     float turn_step = 45;
     DETECTION_OBJECT Triball = findTarget();
     Balldetect.objectDetectThreshold(65);
+    Intake.setVelocity(100,pct);
     int turn_iter;
 
     while(!HoldingBall)
     {
          if(Balldetect.isNearObject() && CheckBallColor())
         {
-            wait(500,msec);
             Intake.stop(hold);
             HoldingBall = true;
         }
@@ -233,8 +233,9 @@ bool getObject()
                 return false;
             }
         }
-        Intake.spin(vex::directionType::fwd,100,vex::velocityUnits::pct);
+        Intake.spin(vex::directionType::fwd);
         moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100);
+        wait(750,msec);
     }
 
     return HoldingBall;
@@ -244,14 +245,14 @@ void ScoreBall()
 {  
     if(field.Blue_Side)
     {
-        moveToPosition(-61.35,0.00,270,true);
+        moveToPosition(-61.35,0.0,270.0);
     }
     if(field.Red_Side)
     {
-        moveToPosition(61.35,0.00,90,true);
+        moveToPosition(61.35,0.0,90.0);
     }
    
-    Intake.spin(vex::directionType::rev,100,vex::velocityUnits::pct);
+    Intake.spin(vex::directionType::rev);
     Chassis.drive_distance(20);
     Intake.stop(coast);
     Chassis.drive_distance(-15);

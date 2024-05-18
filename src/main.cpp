@@ -8,53 +8,42 @@
 /*----------------------------------------------------------------------------*/
 
 #include "ai_functions.h"
-#include "field.h"
-
-
-
 using namespace std;
 using namespace vex;
-
-
-//#define  MANAGER_ROBOT    1
-
-#if defined(MANAGER_ROBOT)
-#pragma message("building for the manager")
-ai::robot_link       link( PORT11, "robot_32456_1", linkType::manager );
-#else
-#pragma message("building for the worker")
-ai::robot_link       link( PORT11, "robot_32456_1", linkType::worker );
-#endif
 
 //Realsense Offsets (15in, 24in)
 // X(0.25in,0in), Y(-4.25in,12in), Z(9.125in,11in), Heading(0,0), Elevation(0,0)
 
-// GPS Offsets (15in,24in)
+// GPS Offsets (15in, 24in)
 // X(0,0), Y(-6.5in,8in), Z(9.875,11in), Heading(180,180)
 
+#define  MANAGER_ROBOT    1
 
-// ---- START CONFIGURED DEVICES ----
-
+#if defined(MANAGER_ROBOT)
+#pragma message("building for the manager")
+ai::robot_link       link( PORT21, "24in 3303X", linkType::manager );
 //24in Robot Specific Objects
-// motor leftDriveA = motor(PORT9, ratio6_1, true);  
-// motor leftDriveB = motor(PORT10, ratio6_1, true);   
-// motor leftDriveC = motor(PORT7, ratio6_1, true);   
-// motor leftDriveD = motor(PORT8, ratio6_1, true);
+motor leftDriveA = motor(PORT9, ratio6_1, true);  
+motor leftDriveB = motor(PORT10, ratio6_1, true);   
+motor leftDriveC = motor(PORT7, ratio6_1, true);   
+motor leftDriveD = motor(PORT8, ratio6_1, true);
 
-// motor rightDriveA = motor(PORT3, ratio6_1, false);
-// motor rightDriveB = motor(PORT4, ratio6_1, false);
-// motor rightDriveC = motor(PORT1, ratio6_1, false);
-// motor rightDriveD = motor(PORT2, ratio6_1, false);
-// const int32_t InertialPort = PORT19;
-// const int32_t HangAPort = PORT14;
-// const int32_t HangBPort = PORT13;
-// const int32_t IntakePort = PORT12;
-// const int32_t GPSPort = PORT20;
-// double GPS_y_Offset = 203.2;
-// motor Catapult = motor(PORT11,ratio36_1,true);
-// double Robot_x_Offset = 25.4;
+motor rightDriveA = motor(PORT3, ratio6_1, false);
+motor rightDriveB = motor(PORT4, ratio6_1, false);
+motor rightDriveC = motor(PORT1, ratio6_1, false);
+motor rightDriveD = motor(PORT2, ratio6_1, false);
+const int32_t InertialPort = PORT19;
+const int32_t HangAPort = PORT14;
+const int32_t HangBPort = PORT13;
+const int32_t IntakePort = PORT12;
+const int32_t GPSPort = PORT20;
+double GPS_y_Offset = 203.2;
+motor Catapult = motor(PORT11,ratio36_1,true);
+double Robot_x_Offset = 25.4;
 
-
+#else
+#pragma message("building for the worker")
+ai::robot_link       link( PORT21, "15in 3303X", linkType::worker );
 //15in Robot Specific Objects
 motor leftDriveA = motor(PORT20, ratio6_1, true);  
 motor leftDriveB = motor(PORT10, ratio6_1, true);   
@@ -65,13 +54,21 @@ motor rightDriveB = motor(PORT2, ratio6_1, false);
 motor rightDriveC = motor(PORT7, ratio6_1, true);
 motor rightDriveD = motor(PORT4, ratio6_1, true);
 const int32_t InertialPort = PORT16;
-const int32_t HangAPort = PORT16;
-const int32_t HangBPort = PORT16;
+const int32_t HangAPort = PORT15;
+const int32_t HangBPort = PORT13;
 const int32_t IntakePort = PORT11;
 const int32_t GPSPort = PORT3;
 double GPS_y_Offset = -146.0;
 double Robot_x_Offset = 1;
+#endif
 
+
+Field field(vex::color::blue,Robot_x_Offset);
+FILE *fp = fopen("/dev/serial2","wb");
+brain Brain;
+controller Controller1 = controller(primary);
+competition Competition;
+ai::jetson  jetson_comms;// create instance of jetson class to receive location and other
 
 //Universal Objects (Do not comment out)
 optical Balldetect = optical(PORT14);
@@ -84,27 +81,7 @@ motor HangB = motor(HangBPort, ratio36_1, true);
 motor_group Hang = motor_group(HangA, HangB);
 motor Intake = motor(IntakePort, ratio6_1, true);
 
-Field field(vex::color::blue,Robot_x_Offset);
-FILE *fp = fopen("/dev/serial2","wb");
-
-
-brain Brain;
-controller Controller1 = controller(primary);
-competition Competition;
-
-// create instance of jetson class to receive location and other
-// data from the Jetson nano
-ai::jetson  jetson_comms;
-/*----------------------------------------------------------------------------*/
-// Create a robot_link on PORT1 using the unique name robot_32456_1
-// The unique name should probably incorporate the team number
-// and be at least 12 characters so as to generate a good hash
-//
-// The Demo is symetrical, we send the same data and display the same status on both
-// manager and worker robots
-// Comment out the following definition to build for the worker robot
-
-// ---- END CONFIGURED DEVICES ----
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void tuned_constants()
 {
@@ -117,8 +94,6 @@ void tuned_constants()
   Chassis.set_turn_exit_conditions(1, 300, 3000);
   Chassis.set_swing_exit_conditions(1, 300, 3000);
 }
-
-
 
 void pre_auton(void) 
 {
@@ -136,15 +111,10 @@ void pre_auton(void)
     wait(25, msec);
   }
   GPS.calibrate();
- // Brain.Screen.print("Calibrating GPS for VEX AI");
   while (GPS.isCalibrating()) 
   {
     wait(25, msec);
   }
-  // reset the screen now that the calibration is complete
-  //Brain.Screen.clearScreen();
-  //Brain.Screen.setCursor(1,1);
-
   wait(50, msec);
   Brain.Screen.clearScreen();
 }
@@ -175,9 +145,18 @@ void usercontrol(void)
     wait(20,msec);
   }
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void testing_tuning(void)
 {
+   while(true)
+  {
+    if(getObject())
+    {
+      ScoreBall();
+      wait(2, sec);
+    }
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -192,16 +171,8 @@ void testing_tuning(void)
 
 void auto_Isolation(void) 
 {
-  while(true)
-  {
-    if(getObject())
-    {
-      ScoreBall();
-      wait(2, sec);
-    }
-  }
+ 
 }
-
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -216,7 +187,6 @@ void auto_Isolation(void)
 void auto_Interaction(void) 
 {
 
-  // Functions needed: evaluate which ball detected is target, go to target (x,y), intake ball, dump ball, 
 }
 
 /*---------------------------------------------------------------------------*/
@@ -257,25 +227,17 @@ int main() {
   thread t1(dashboardTask);
   pre_auton(); 
   // Set up callbacks for autonomous and driver control periods.
-  Competition.autonomous(auto_Isolation);
-  //Competition.autonomous(autonomousMain);
-  // print through the controller to the terminal (vexos 1.0.12 is needed)
-  // As USB is tied up with Jetson communications we cannot use
-  // printf for debug.  If the controller is connected
-  // then this can be used as a direct connection to USB on the controller
-  // when using VEXcode.
-  //
-  //FILE *fp = fopen("/dev/serial2","wb");
-
+  Competition.drivercontrol(usercontrol);
+  Competition.autonomous(testing_tuning);
+  // Competition.autonomous(autonomousMain);
   this_thread::sleep_for(loop_time);
   int counter = 0 ;
   while(1) 
   {
 
-      // get last map data
-      jetson_comms.get_data( &local_map );
-      // set our location to be sent to partner robot
-      link.set_remote_location( local_map.pos.x, local_map.pos.y, local_map.pos.az, local_map.pos.status );
+      
+      jetson_comms.get_data( &local_map ); // get last map data
+      link.set_remote_location( local_map.pos.x, local_map.pos.y, local_map.pos.az, local_map.pos.status );// set our location to be sent to partner robot
 
       counter += 1 ;
       if (counter > 15)
@@ -285,12 +247,9 @@ int main() {
         //fprintf(fp,"\nGPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
         counter = 0 ;
       }
-
-
       // request new data    
       // NOTE: This request should only happen in a single task.    
       jetson_comms.request_map();
-
       // Allow other tasks to run
       this_thread::sleep_for(loop_time);
   }
