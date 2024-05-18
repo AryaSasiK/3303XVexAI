@@ -50,7 +50,6 @@ double calculateBearing(double currX, double currY, double targetX, double targe
     {
         bearing_deg += 360;
     }
-
     // Normalize to the range [-180, 180]
     // This allows turnTo to make the smallest turn, whether going forward or backwards.
     bearing_deg = fmod(bearing_deg, 360);
@@ -66,46 +65,29 @@ double calculateBearing(double currX, double currY, double targetX, double targe
     return bearing_deg;
 }
 
-// Turns the robot to face the angle specified, taking into account a tolerance and speed of turn.
-void turnTo(double angle, int speed = 75, bool frontfacing = true)
-{
-    float voltage = (speed * 0.12);
-    Chassis.set_heading(GPS.heading(deg));
-    if (frontfacing)
-    {
-        Chassis.turn_to_angle(angle, voltage);
-    }
-    else
-    {
-        Chassis.turn_to_angle(180 + angle, voltage);
-    }
-}
 
-void moveToPoint(Point* Target, bool frontfacing, int Dspeed, int Tspeed)
-{   float targetThreshold = 25.4; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
+void moveToPoint(Point* Target, bool frontfacing)
+{   
+    float ThresholdRad = 25.4; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
     bool arrivedtoTarget = false;
     while(!arrivedtoTarget)
     {
-   
-        float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), Target->Xcord, Target->Ycord);
-        float distance = distanceTo(Target->Xcord, Target->Ycord);
-        float voltage = (Dspeed * .12);
-
-        turnTo(intialHeading, Tspeed, frontfacing);
-        if(frontfacing)
-        {
-            Chassis.drive_distance(distance, intialHeading, voltage, voltage);
-        }
-        else
-        {
-            Chassis.drive_distance(-distance, 180 + intialHeading, voltage, voltage);
-        }
-        float dist = (GPS.xPosition(distanceUnits::cm) - Target->Xcord) * (GPS.xPosition(distanceUnits::cm) - Target->Xcord) + (GPS.yPosition(distanceUnits::cm) -Target->Ycord ) * (GPS.yPosition(distanceUnits::cm) - Target->Ycord );
-        if (dist <= (targetThreshold * targetThreshold))
+        //Check to see if we have arrived to target 
+        float threshold = (GPS.xPosition(distanceUnits::cm) - Target->Xcord) * (GPS.xPosition(distanceUnits::cm) - Target->Xcord) + (GPS.yPosition(distanceUnits::cm) -Target->Ycord ) * (GPS.yPosition(distanceUnits::cm) - Target->Ycord );
+        if (threshold <= pow(ThresholdRad, 2))
         {
                 arrivedtoTarget = true;
         }
-    
+        //Turn Function
+        float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), Target->Xcord, Target->Ycord);
+        if (frontfacing)
+        {
+            intialHeading = intialHeading + 180;
+        }
+        Chassis.turn_to_angle(intialHeading);
+        //Drive Function
+        float distance = distanceTo(Target->Xcord, Target->Ycord);
+        Chassis.drive_distance(distance, intialHeading);
     }
 
 }
@@ -113,26 +95,34 @@ void moveToPoint(Point* Target, bool frontfacing, int Dspeed, int Tspeed)
 // Method that moves to a given (x,y) position and a desired target theta to finish movement facing in cm
 void moveToPosition(double target_x, double target_y, double target_theta = -1, bool frontfacing = true, int Dspeed = 75, int Tspeed = 75)
 {
+    Chassis.drive_max_voltage = Dspeed * 0.12;
+    Chassis.turn_max_voltage = Tspeed * 0.12;
+
     Point Target(target_x, target_y);
     Point CurrentPoint(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm));
-    //Point CurrentPoint(-40, -40);
+
     if (!field.Check_Barrier_Intersects(CurrentPoint, Target,true))
     {
         fprintf(fp,"No Barrier Intersection found moving to point\n");
-        moveToPoint(&Target,frontfacing,Dspeed,Tspeed);
+        moveToPoint(&Target,frontfacing);
     }
     else
     {
         fprintf(fp,"Barrier Intersection found! Creating Path to Target\n");
         Path Path2Follow = field.Create_Path_to_Target(Target);
+        fprintf(fp,"\nPath Length: %.2f || Number of Points in Path %i || Start of Path: (%.2f, %.2f)", Path2Follow.pathlength, Path2Follow.PathPoints.size(), Path2Follow.PathPoints[0]->Xcord, Path2Follow.PathPoints[0]->Ycord);
+        for (int i = 0; i < Path2Follow.PathPoints.size(); i++)
+        {
+            fprintf(fp,"-> (%.2f, %.2f)",Path2Follow.PathPoints[i]->Xcord, Path2Follow.PathPoints[i]->Ycord);
+        }
         for (int i = 1; i < Path2Follow.PathPoints.size(); i++)
         {
-            moveToPoint(Path2Follow.PathPoints[i], frontfacing, Dspeed, Tspeed);
+            moveToPoint(Path2Follow.PathPoints[i], frontfacing);
         }
     }
     if (target_theta != -1)
     {
-        turnTo(target_theta);
+        Chassis.turn_to_angle(target_theta);
     }
 }
 
@@ -162,16 +152,18 @@ bool On_Goal_Side(double target_x, bool checkside)
 DETECTION_OBJECT findTarget()
 {
     DETECTION_OBJECT target;
+    target.mapLocation.x = 0;
+    target.mapLocation.y = 0;
     static AI_RECORD local_map;
     jetson_comms.get_data(&local_map);
     double lowestDist = 1000000;
-    for (int i = 0; i < local_map.detectionCount ; i++)
+    for (int i = 0; i < local_map.detectionCount; i++)
     {
         if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
         {
             if(field.Blue_Side)
             {
-                if(local_map.detections[i].classID != 1)
+                if(local_map.detections[i].classID == 0 || 2)
                 {
                     double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
                     if (distance < lowestDist)
@@ -183,7 +175,7 @@ DETECTION_OBJECT findTarget()
             }
             if(field.Red_Side)
             {
-                if(local_map.detections[i].classID != 2 )
+                if(local_map.detections[i].classID == 0 || 1  )
                 {
                     double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
                     if (distance < lowestDist)
@@ -191,15 +183,24 @@ DETECTION_OBJECT findTarget()
                         target = local_map.detections[i];
                         lowestDist = distance;     
                     }
-                }
-                
+                } 
             }
         }  
-    
     }
     return target;
 }
 
+bool CheckBallColor()
+{
+    if(Balldetect.color() == red)
+        return true;
+    else if(Balldetect.color() == blue)
+        return true;
+    else if(Balldetect.color() == green)
+        return true;
+
+    return false;
+}
 
 // Function to retrieve an object based on detection
 bool getObject()
@@ -207,30 +208,36 @@ bool getObject()
     bool HoldingBall = false; 
     float turn_step = 45;
     DETECTION_OBJECT Triball = findTarget();
+    Balldetect.objectDetectThreshold(65);
     int turn_iter;
+
     while(!HoldingBall)
     {
-        turn_iter = 0;
-        while(Triball.mapLocation.x && Triball.mapLocation.y == 0 || Triball.mapLocation.x && Triball.mapLocation.y > 200 )
-        {
-            Chassis.turn_to_angle(GPS.heading()+turn_step,3);
-            wait(100,msec);
-            Triball = findTarget();
-            turn_iter = turn_iter + 1 ;
-            fprintf(fp,"Triballl Location (%.2f, %.2f)", Triball.mapLocation.x, Triball.mapLocation.y);
-        }
-        Intake.spin(vex::directionType::fwd,100,vex::velocityUnits::pct);
-        moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100);
-        if(Balldetect.isNearObject())
+         if(Balldetect.isNearObject() && CheckBallColor())
         {
             wait(500,msec);
             Intake.stop(hold);
-            return true;
+            HoldingBall = true;
         }
-        fprintf(fp,"Triballl Location (%.2f, %.2f)", Triball.mapLocation.x, Triball.mapLocation.y);
+        turn_iter = 0;
+        while(Triball.mapLocation.x && Triball.mapLocation.y == 0)
+        {
+            Chassis.turn_max_voltage = 3;
+            Chassis.turn_to_angle(GPS.heading()+turn_step);
+            wait(1,sec);
+            Triball = findTarget();
+            turn_iter = turn_iter + 1 ;
+            fprintf(fp,"Triballl Location (%.2f, %.2f)", Triball.mapLocation.x, Triball.mapLocation.y);
+            if(turn_iter > 7)
+            {
+                return false;
+            }
+        }
+        Intake.spin(vex::directionType::fwd,100,vex::velocityUnits::pct);
+        moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100);
     }
-    return false;
 
+    return HoldingBall;
 }
 
 void ScoreBall()
@@ -245,7 +252,7 @@ void ScoreBall()
     }
    
     Intake.spin(vex::directionType::rev,100,vex::velocityUnits::pct);
-    Chassis.drive_distance(25);
+    Chassis.drive_distance(20);
     Intake.stop(coast);
     Chassis.drive_distance(-15);
 }

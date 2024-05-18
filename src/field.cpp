@@ -1,30 +1,30 @@
 #include "field.h"
 
-double
+static double
     Field_XY_Lim = 178.30,
     Alley_X = 62.46,
     Alley_Y = 119.69,
     CenterBar_X = 0.00,
     CenterBar_Y = 116.70;
-Point
+static Point
     Q1_Field_Corner(Field_XY_Lim, Field_XY_Lim),
     Q2_Field_Corner(Field_XY_Lim, -Field_XY_Lim),
     Q3_Field_Corner(-Field_XY_Lim, -Field_XY_Lim),
     Q4_Field_Corner(-Field_XY_Lim, Field_XY_Lim);
-Line
+static Line
     Front_Side_Field(Q4_Field_Corner, Q1_Field_Corner),
     Right_Side_Field(Q1_Field_Corner, Q2_Field_Corner),
     Rear_Side_Field(Q2_Field_Corner, Q3_Field_Corner),
     Left_Side_Field(Q3_Field_Corner, Q4_Field_Corner);
 
-Point
+static Point
     Center_Bar1(CenterBar_X, -CenterBar_Y),
     Center_Bar2(CenterBar_X, CenterBar_Y),
     Blue_Alley1(-Alley_X, Alley_Y),
     Blue_Alley2(Alley_X, Alley_Y),
     Red_Alley1(-Alley_X, -Alley_Y),
     Red_Alley2(Alley_X, -Alley_Y);
-Line
+static Line
     Center_Bar(Center_Bar1, Center_Bar2),
     Blue_Alley(Blue_Alley1, Blue_Alley2),
     Red_Alley(Red_Alley1, Red_Alley2);

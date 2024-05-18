@@ -123,7 +123,6 @@ void tuned_constants()
 void pre_auton(void) 
 {
   tuned_constants();
-  Balldetect.objectDetectThreshold(65);
   Brain.Screen.clearScreen();
   Brain.Screen.print("Device initialization...");
   Brain.Screen.setCursor(2, 1);
