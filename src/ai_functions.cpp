@@ -82,19 +82,16 @@ void turnTo(double angle, int speed = 75, bool frontfacing = true)
 }
 
 void moveToPoint(Point* Target, bool frontfacing, int Dspeed, int Tspeed)
-{   float targetThreshold = 15; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
+{   float targetThreshold = 25.4; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
     bool arrivedtoTarget = false;
     while(!arrivedtoTarget)
     {
-        float dist = (GPS.xPosition(distanceUnits::cm) - Target->Xcord) * (GPS.xPosition(distanceUnits::cm) - Target->Xcord) + (GPS.yPosition(distanceUnits::cm) -Target->Ycord ) * (GPS.xPosition(distanceUnits::cm) - Target->Ycord );
-        if (dist <= (targetThreshold * targetThreshold))
-        {
-                arrivedtoTarget = true;
-        }
+   
         float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), Target->Xcord, Target->Ycord);
-        turnTo(intialHeading, Tspeed, frontfacing);
         float distance = distanceTo(Target->Xcord, Target->Ycord);
         float voltage = (Dspeed * .12);
+
+        turnTo(intialHeading, Tspeed, frontfacing);
         if(frontfacing)
         {
             Chassis.drive_distance(distance, intialHeading, voltage, voltage);
@@ -102,6 +99,11 @@ void moveToPoint(Point* Target, bool frontfacing, int Dspeed, int Tspeed)
         else
         {
             Chassis.drive_distance(-distance, 180 + intialHeading, voltage, voltage);
+        }
+        float dist = (GPS.xPosition(distanceUnits::cm) - Target->Xcord) * (GPS.xPosition(distanceUnits::cm) - Target->Xcord) + (GPS.yPosition(distanceUnits::cm) -Target->Ycord ) * (GPS.yPosition(distanceUnits::cm) - Target->Ycord );
+        if (dist <= (targetThreshold * targetThreshold))
+        {
+                arrivedtoTarget = true;
         }
     
     }
@@ -157,74 +159,75 @@ bool On_Goal_Side(double target_x, bool checkside)
 }
 
 //Function to find the target object based on type and return its record
-DETECTION_OBJECT findTarget(bool checkside = false)
+DETECTION_OBJECT findTarget()
 {
     DETECTION_OBJECT target;
     static AI_RECORD local_map;
     jetson_comms.get_data(&local_map);
     double lowestDist = 1000000;
-    for (int i = 0; i < local_map.detectionCount; i++)
+    for (int i = 0; i < local_map.detectionCount ; i++)
     {
-        if(On_Goal_Side(local_map.detections[i].mapLocation.x,checkside))
+        if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
         {
-            if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
+            if(field.Blue_Side)
             {
-                if(field.Blue_Side)
+                if(local_map.detections[i].classID != 1)
                 {
-                    if(local_map.detections[i].classID == 0 || local_map.detections[i].classID == 2)
+                    double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
+                    if (distance < lowestDist)
                     {
-                        double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
-                        if (distance < lowestDist)
-                        {
-                            target = local_map.detections[i];
-                            lowestDist = distance;     
-                        }
+                        target = local_map.detections[i];
+                        lowestDist = distance;     
                     }
                 }
-                if(field.Red_Side)
+            }
+            if(field.Red_Side)
+            {
+                if(local_map.detections[i].classID != 2 )
                 {
-                    if(local_map.detections[i].classID == 0 || local_map.detections[i].classID == 1)
+                    double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
+                    if (distance < lowestDist)
                     {
-                        double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
-                        if (distance < lowestDist)
-                        {
-                            target = local_map.detections[i];
-                            lowestDist = distance;     
-                        }
+                        target = local_map.detections[i];
+                        lowestDist = distance;     
                     }
                 }
-            }  
-        }
+                
+            }
+        }  
+    
     }
     return target;
 }
 
 
 // Function to retrieve an object based on detection
-bool getObject(bool scoreobject = false)
+bool getObject()
 {
     bool HoldingBall = false; 
     float turn_step = 45;
-    DETECTION_OBJECT Triball;
+    DETECTION_OBJECT Triball = findTarget();
     int turn_iter;
     while(!HoldingBall)
     {
-        Triball = findTarget(scoreobject);
         turn_iter = 0;
-        while(Triball.mapLocation.x && Triball.mapLocation.y == 0 )
+        while(Triball.mapLocation.x && Triball.mapLocation.y == 0 || Triball.mapLocation.x && Triball.mapLocation.y > 200 )
         {
-            Chassis.turn_to_angle(GPS.heading()+turn_step);
-            Triball = findTarget(scoreobject);
+            Chassis.turn_to_angle(GPS.heading()+turn_step,3);
+            wait(100,msec);
+            Triball = findTarget();
             turn_iter = turn_iter + 1 ;
+            fprintf(fp,"Triballl Location (%.2f, %.2f)", Triball.mapLocation.x, Triball.mapLocation.y);
         }
         Intake.spin(vex::directionType::fwd,100,vex::velocityUnits::pct);
-        moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100,true);
+        moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100);
         if(Balldetect.isNearObject())
         {
             wait(500,msec);
             Intake.stop(hold);
             return true;
         }
+        fprintf(fp,"Triballl Location (%.2f, %.2f)", Triball.mapLocation.x, Triball.mapLocation.y);
     }
     return false;
 
@@ -232,7 +235,14 @@ bool getObject(bool scoreobject = false)
 
 void ScoreBall()
 {  
-    moveToPosition(61.35,0.00,90);
+    if(field.Blue_Side)
+    {
+        moveToPosition(-61.35,0.00,270,true);
+    }
+    if(field.Red_Side)
+    {
+        moveToPosition(61.35,0.00,90,true);
+    }
    
     Intake.spin(vex::directionType::rev,100,vex::velocityUnits::pct);
     Chassis.drive_distance(25);

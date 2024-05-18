@@ -119,15 +119,10 @@ Field::Field(vex::color Alliance_Color, double Robot_Offset)
         Red_Side = true;
         Blue_Side = false;
     }
-    else if (Alliance_Color == vex::color::blue)
+    if (Alliance_Color == vex::color::blue)
     {
         Blue_Side = true;
         Red_Side = false;
-    }
-    else if (Alliance_Color == vex::color::purple)
-    {
-        Red_Side = true;
-        Blue_Side = true;
     }
 
     Offset = Robot_Offset;
@@ -320,14 +315,14 @@ bool Field::In_Goal_Zone(float Ball_x, float Ball_y)
         }
         P1 = P2;
     }
-    if (inside)
-    {
-        fprintf(fp, "Triaball @ (%.2f, %.2f) is inside a goal", Ball_x, Ball_y);
-    }
-    else
-    {
-        fprintf(fp, "Triaball @ (%.2f, %.2f) is not inside a goal", Ball_x, Ball_y);
-    }
+    // if (inside)
+    // {
+    //     fprintf(fp, "\nTriaball @ (%.2f, %.2f) is inside a goal", Ball_x, Ball_y);
+    // }
+    // else
+    // {
+    //     fprintf(fp, "\nTriaball @ (%.2f, %.2f) is not inside a goal", Ball_x, Ball_y);
+    // }
     return inside;
 }
 

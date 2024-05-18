@@ -70,7 +70,7 @@ const int32_t HangBPort = PORT16;
 const int32_t IntakePort = PORT11;
 const int32_t GPSPort = PORT3;
 double GPS_y_Offset = -146.0;
-double Robot_x_Offset = 19;
+double Robot_x_Offset = 1;
 
 
 //Universal Objects (Do not comment out)
@@ -83,8 +83,10 @@ motor HangA = motor(HangAPort, ratio36_1, false);
 motor HangB = motor(HangBPort, ratio36_1, true);
 motor_group Hang = motor_group(HangA, HangB);
 motor Intake = motor(IntakePort, ratio6_1, true);
-Field field(purple,Robot_x_Offset);
+
+Field field(vex::color::blue,Robot_x_Offset);
 FILE *fp = fopen("/dev/serial2","wb");
+
 
 brain Brain;
 controller Controller1 = controller(primary);
@@ -177,20 +179,6 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
-  //moveToPosition(122,122,-1,true,100,100);
-  //moveToPosition(-61.35,61.35,-1,true,100,100);
-  //moveToPosition(95.00,150.51,-1,true,50,50);
-  //getObject();
-  // for(int i = 0; i < field.Path2Snap2.size(); i++)
-  // {
-  //   fprintf(fp, "(%.2f,%.2f) -> ", field.Path2Snap2[i]->Xcord, field.Path2Snap2[i]->Xcord);
-  // }
-  //Print_Path(&test);
-  
-  //fprintf(fp, "(%.2f,%.2f) -> ", field.Path2Snap2[0]->Xcord, field.Path2Snap2[0]->Ycord);
-  //while(true)
-    //fprintf(fp,"\n\n\n\n GPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
-
 }
 
 /*---------------------------------------------------------------------------*/
@@ -205,7 +193,14 @@ void testing_tuning(void)
 
 void auto_Isolation(void) 
 {
-
+  while(true)
+  {
+    if(getObject())
+    {
+      ScoreBall();
+      wait(2, sec);
+    }
+  }
 }
 
 
