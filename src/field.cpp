@@ -229,8 +229,6 @@ bool Check_Intersects(Point CurrentPos, Point PointOnLine, Line BarrierLine)
 
 Line Field::FindOffsetLines(Point P1, Point P2, bool offsettype)
 {
-
-
     double dx = P2.Xcord - P1.Xcord;
     double dy = P2.Ycord - P1.Ycord;
     double Length = sqrt(pow(dx,2) + pow(dy,2));
@@ -260,13 +258,12 @@ bool Field::Check_Barrier_Intersects(Point CPos, Point POL, bool checkoffsets = 
 {   
     Line LineA = FindOffsetLines(CPos,POL,true);
     Line LineB = FindOffsetLines(CPos,POL,false);
-        // fprintf(fp,"Current Pos (%.2f, %.2f), Point on Line(%.2f, %.2f)",CPos.Xcord,CPos.Ycord,POL.Xcord,POL.Ycord);
+    
     bool Intersect = false;
     for (int i = 0; i < Field_Barriers.size(); i++)
     {
         for (int j = 0; j < Field_Barriers[i]->BarrierLines.size(); j++)
         {
-            
             if (Check_Intersects(CPos, POL, Field_Barriers[i]->BarrierLines[j]))
             {
                 return true;
@@ -338,23 +335,11 @@ pair<Point, int> Field::Find_Point_on_Path(Point freePoint)
         PiL.push_back(temp.second); // This will hold the distance in the order of the path lines
     }
 
-    // if(Point_Dist.size() > 1 && PiL.size() > 1)
-    //     fprintf(fp,"Point_Dist & Line_Pos vectors are populated");
-    // else
-    //     fprintf(fp,"Point_Dist & Line_Pos vectors are empty");
-
     sort(Point_Dist.begin(), Point_Dist.end(), pairCompare);
-
-    // for(int k = 0; k < Point_Dist.size(); k++)
-    // {
-    //     fprintf(fp,"Sorted Vector Point %i is at coordinate (%.2f, %.2f) with a distance %.2f \n", k, Point_Dist[k].first.Xcord, Point_Dist[k].first.Ycord, Point_Dist[k].second);
-    // }
-
     for (int j = 0; j < Point_Dist.size(); j++)
     {
         if (!Check_Barrier_Intersects(freePoint, Point_Dist[j].first))
         {
-
             Point_PiP.first.Xcord = Point_Dist[j].first.Xcord;
             Point_PiP.first.Ycord = Point_Dist[j].first.Ycord;
             for (int k = 0; k < PiL.size(); k++)
@@ -374,7 +359,6 @@ Path Field::Create_Path_to_Target(Point Target)
 {
     Path DrivePath;
     Point CurrentPos(GPS.xPosition(vex::distanceUnits::cm), GPS.yPosition(vex::distanceUnits::cm));
-    // Point CurrentPos(-40, -40);
     Point *temp;
     pair<Point, int> Start = Find_Point_on_Path(CurrentPos);
     pair<Point, int> End = Find_Point_on_Path(Target);
@@ -402,9 +386,7 @@ Path Field::Create_Path_to_Target(Point Target)
         PathB.push_back(i);
     }
     int pos;
-    // fprintf(fp, "Current Pos: (%.2f, %.2f) - > Target Pos: (%.2f, %.2f)\n", CurrentPos.Xcord, CurrentPos.Ycord, Target.Xcord, Target.Ycord);
-    // fprintf(fp, "First point to drive to is (%.2f, %.2f)\n", Start.first.Xcord, Start.first.Ycord);
-    
+   
     pathA.PathPoints.push_back(&CurrentPos);
     pathA.PathPoints.push_back(&Start.first);
     for (int i = 0; i < PathA.size(); i++)
@@ -436,21 +418,15 @@ Path Field::Create_Path_to_Target(Point Target)
         for(int i = 0; i < pathA.PathPoints.size(); i++)
         {
             DrivePath.PathPoints.push_back(pathA.PathPoints[i]);
-            // fprintf(fp, " -> (%.2f, %.2f)", pathA.PathPoints[i]->Xcord, pathA.PathPoints[i]->Ycord);
         }
     }
     else
     {
-         for(int i = 0; i < pathB.PathPoints.size(); i++)
+        for(int i = 0; i < pathB.PathPoints.size(); i++)
         {
             DrivePath.PathPoints.push_back(pathB.PathPoints[i]);
-            // fprintf(fp, " -> (%.2f, %.2f)", pathB.PathPoints[i]->Xcord, pathB.PathPoints[i]->Ycord);
         }
     }
-
-    // fprintf(fp, "- > (%.2f, %.2f) Last point before target ", End.first.Xcord, End.first.Ycord);
-    // fprintf(fp, "|| Target point is (%.2f, %.2f)\n", Target.Xcord, Target.Ycord);
-
     return DrivePath;
 }
 

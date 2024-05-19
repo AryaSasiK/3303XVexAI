@@ -12,6 +12,7 @@
 
 #include "ai_functions.h"
 using namespace std;
+using namespace vex;
 // Calculates the distance to the coordinates from the current robot position
 
 float distanceTo(double target_x, double target_y, vex::distanceUnits unit = vex::distanceUnits::in)
@@ -84,10 +85,16 @@ void moveToPoint(Point* Target, bool frontfacing)
         {
             intialHeading = intialHeading + 180;
         }
+        Chassis.set_heading(GPS.heading(deg));
         Chassis.turn_to_angle(intialHeading);
         //Drive Function
+        Chassis.desired_heading = intialHeading;
         float distance = distanceTo(Target->Xcord, Target->Ycord);
-        Chassis.drive_distance(distance, intialHeading);
+        if (frontfacing)
+        {
+            distance = distance * -1;
+        }
+        Chassis.drive_distance(distance);
     }
 
 }
@@ -111,7 +118,7 @@ void moveToPosition(double target_x, double target_y, double target_theta = -1, 
         fprintf(fp,"Barrier Intersection found! Creating Path to Target\n");
         Path Path2Follow = field.Create_Path_to_Target(Target);
         fprintf(fp,"\nPath Length: %.2f || Number of Points in Path %i || Start of Path: (%.2f, %.2f)", Path2Follow.pathlength, Path2Follow.PathPoints.size(), Path2Follow.PathPoints[0]->Xcord, Path2Follow.PathPoints[0]->Ycord);
-        for (int i = 0; i < Path2Follow.PathPoints.size(); i++)
+        for (int i = 1; i < Path2Follow.PathPoints.size(); i++)
         {
             fprintf(fp,"-> (%.2f, %.2f)",Path2Follow.PathPoints[i]->Xcord, Path2Follow.PathPoints[i]->Ycord);
         }
@@ -217,6 +224,7 @@ bool getObject()
          if(Balldetect.isNearObject() && CheckBallColor())
         {
             Intake.stop(hold);
+            
             HoldingBall = true;
         }
         turn_iter = 0;

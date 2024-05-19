@@ -27,18 +27,17 @@ motor leftDriveA = motor(PORT9, ratio6_1, true);
 motor leftDriveB = motor(PORT10, ratio6_1, true);   
 motor leftDriveC = motor(PORT7, ratio6_1, true);   
 motor leftDriveD = motor(PORT8, ratio6_1, true);
-
 motor rightDriveA = motor(PORT3, ratio6_1, false);
 motor rightDriveB = motor(PORT4, ratio6_1, false);
 motor rightDriveC = motor(PORT1, ratio6_1, false);
 motor rightDriveD = motor(PORT2, ratio6_1, false);
+motor Catapult = motor(PORT11,ratio36_1,true);
+optical Balldetect = optical(PORT14);
+motor Intake = motor(PORT11, ratio6_1, true);
+gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
 const int32_t InertialPort = PORT19;
 const int32_t HangAPort = PORT14;
 const int32_t HangBPort = PORT13;
-const int32_t IntakePort = PORT12;
-const int32_t GPSPort = PORT20;
-double GPS_y_Offset = 203.2;
-motor Catapult = motor(PORT11,ratio36_1,true);
 double Robot_x_Offset = 25.4;
 
 #else
@@ -53,13 +52,13 @@ motor rightDriveA = motor(PORT12, ratio6_1, false);
 motor rightDriveB = motor(PORT2, ratio6_1, false);
 motor rightDriveC = motor(PORT7, ratio6_1, true);
 motor rightDriveD = motor(PORT4, ratio6_1, true);
+motor Intake = motor(PORT11, ratio6_1, true);
+gps GPS = gps(PORT3, 0.0, -146, mm, 180);
 const int32_t InertialPort = PORT16;
 const int32_t HangAPort = PORT15;
 const int32_t HangBPort = PORT13;
-const int32_t IntakePort = PORT11;
-const int32_t GPSPort = PORT3;
-double GPS_y_Offset = -146.0;
 double Robot_x_Offset = 1;
+
 #endif
 
 
@@ -71,21 +70,19 @@ competition Competition;
 ai::jetson  jetson_comms;// create instance of jetson class to receive location and other
 
 //Universal Objects (Do not comment out)
-optical Balldetect = optical(PORT14);
+
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
-Drive Chassis(ZERO_TRACKER_NO_ODOM,LeftDriveSmart,RightDriveSmart,InertialPort,3.125,0.6,360,PORT1,-PORT2,PORT3,-PORT4,3,2.75,-2,1,-2.75,5.5);
-gps GPS = gps(GPSPort, 0.0, GPS_y_Offset, mm, 180);
+Drive Chassis(LeftDriveSmart,RightDriveSmart,InertialPort, 3.125, 0.6, 360);
 motor HangA = motor(HangAPort, ratio36_1, false);
 motor HangB = motor(HangBPort, ratio36_1, true);
 motor_group Hang = motor_group(HangA, HangB);
-motor Intake = motor(IntakePort, ratio6_1, true);
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void tuned_constants()
 {
-  
   Chassis.set_drive_constants(12, 1.5, 0, 10, 0);
   Chassis.set_heading_constants(6, .4, 0, 1, 0);
   Chassis.set_turn_constants(12, 0.25, 0.0005, 1.25, 15);//Tuned
