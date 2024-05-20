@@ -73,14 +73,16 @@ public:
     double Offset;
     Field(vex::color Alliance_Color, double Robot_Offset);
     vector<Point*> Path2Snap2;
-    vector<Line*> P2S2_Lines;
+    vector<const Line*> P2S2_Lines;
     vector<const Barrier *> Field_Barriers;
     vector<const Point*> Goal_Zone;
+    vector<const Point*> ML_Zone;
     vex::color Side;
-    pair<Point, double> Find_Closest_Point_In_Line(Point point, Line* LineSeg);
+    pair<Point, double> Find_Closest_Point_In_Line(Point point, const Line* LineSeg);
     pair<Point, int> Find_Point_on_Path(Point Target);
     bool Check_Barrier_Intersects(Point CurrentPos, Point PointOnLine, bool checkoffsets);
     bool In_Goal_Zone(float Ball_x, float Ball_y);
+    bool In_MatchLoad_Zone(float Ball_x, float Ball_y);
     Path Create_Path_to_Target(Point Target);
     Line FindOffsetLines(Point P1, Point P2, bool offsettype);
 

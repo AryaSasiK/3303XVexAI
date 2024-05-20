@@ -71,17 +71,17 @@ void moveToPoint(Point* Target, bool frontfacing)
 {   
     float ThresholdRad = 25.4; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
     bool arrivedtoTarget = false;
-    while(!arrivedtoTarget)
-    {
-        //Check to see if we have arrived to target 
-        float threshold = (GPS.xPosition(distanceUnits::cm) - Target->Xcord) * (GPS.xPosition(distanceUnits::cm) - Target->Xcord) + (GPS.yPosition(distanceUnits::cm) -Target->Ycord ) * (GPS.yPosition(distanceUnits::cm) - Target->Ycord );
-        if (threshold <= pow(ThresholdRad, 2))
-        {
-                arrivedtoTarget = true;
-        }
+    // while(!arrivedtoTarget)
+    // {
+    //     //Check to see if we have arrived to target 
+    //     float threshold = (GPS.xPosition(distanceUnits::cm) - Target->Xcord) * (GPS.xPosition(distanceUnits::cm) - Target->Xcord) + (GPS.yPosition(distanceUnits::cm) -Target->Ycord ) * (GPS.yPosition(distanceUnits::cm) - Target->Ycord );
+    //     if (threshold <= pow(ThresholdRad, 2))
+    //     {
+    //             arrivedtoTarget = true;
+    //     }
         //Turn Function
         float intialHeading = calculateBearing(GPS.xPosition(distanceUnits::cm), GPS.yPosition(distanceUnits::cm), Target->Xcord, Target->Ycord);
-        if (frontfacing)
+        if (!frontfacing)
         {
             intialHeading = intialHeading + 180;
         }
@@ -90,12 +90,12 @@ void moveToPoint(Point* Target, bool frontfacing)
         //Drive Function
         Chassis.desired_heading = intialHeading;
         float distance = distanceTo(Target->Xcord, Target->Ycord);
-        if (frontfacing)
+        if (!frontfacing)
         {
             distance = distance * -1;
         }
         Chassis.drive_distance(distance);
-    }
+    // }
 
 }
 
@@ -117,12 +117,13 @@ void moveToPosition(double target_x, double target_y, double target_theta = -1, 
     {
         fprintf(fp,"Barrier Intersection found! Creating Path to Target\n");
         Path Path2Follow = field.Create_Path_to_Target(Target);
+        Path2Follow.calcPathLength();
         fprintf(fp,"\nPath Length: %.2f || Number of Points in Path %i || Start of Path: (%.2f, %.2f)", Path2Follow.pathlength, Path2Follow.PathPoints.size(), Path2Follow.PathPoints[0]->Xcord, Path2Follow.PathPoints[0]->Ycord);
-        for (int i = 1; i < Path2Follow.PathPoints.size(); i++)
-        {
-            fprintf(fp,"-> (%.2f, %.2f)",Path2Follow.PathPoints[i]->Xcord, Path2Follow.PathPoints[i]->Ycord);
-        }
-        for (int i = 1; i < Path2Follow.PathPoints.size(); i++)
+        // for (int i = 0; i < Path2Follow.PathPoints.size(); i++)
+        // {
+        //     fprintf(fp,"-> (%.2f, %.2f)",Path2Follow.PathPoints[i]->Xcord, Path2Follow.PathPoints[i]->Xcord);
+        // }
+        for (int i = 1; i < Path2Follow.PathPoints.size() -1 ; i++)
         {
             moveToPoint(Path2Follow.PathPoints[i], frontfacing);
         }
@@ -166,11 +167,11 @@ DETECTION_OBJECT findTarget()
     double lowestDist = 1000000;
     for (int i = 0; i < local_map.detectionCount; i++)
     {
-        if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
+        if(!field.In_Goal_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y) && !field.In_MatchLoad_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
         {
-            if(field.Blue_Side)
+            if(field.Blue_Side && On_Goal_Side)
             {
-                if(local_map.detections[i].classID == 0 || 2)
+                if(local_map.detections[i].classID == 0)
                 {
                     double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
                     if (distance < lowestDist)
@@ -180,9 +181,9 @@ DETECTION_OBJECT findTarget()
                     }
                 }
             }
-            if(field.Red_Side)
+            if(field.Red_Side && On_Goal_Side)
             {
-                if(local_map.detections[i].classID == 0 || 1  )
+                if(local_map.detections[i].classID == 0   )
                 {
                     double distance = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
                     if (distance < lowestDist)
@@ -214,36 +215,47 @@ bool getObject()
 {
     bool HoldingBall = false; 
     float turn_step = 45;
-    DETECTION_OBJECT Triball = findTarget();
+    DETECTION_OBJECT Triball;
+    Triball.mapLocation.x = 0; 
+    Triball.mapLocation.y = 0;
     Balldetect.objectDetectThreshold(65);
     Intake.setVelocity(100,pct);
-    int turn_iter;
 
     while(!HoldingBall)
     {
-         if(Balldetect.isNearObject() && CheckBallColor())
+        if(Balldetect.isNearObject() && CheckBallColor())
         {
+            fprintf(fp,"The robot is holding a Triball");
             Intake.stop(hold);
-            
             HoldingBall = true;
         }
-        turn_iter = 0;
-        while(Triball.mapLocation.x && Triball.mapLocation.y == 0)
+      
+        int turn_iter = 0;
+        while(Triball.mapLocation.x && Triball.mapLocation.y == 0.00)
         {
+        
+            fprintf(fp,"Seanning for ball....");
             Chassis.turn_max_voltage = 3;
             Chassis.turn_to_angle(GPS.heading()+turn_step);
             wait(1,sec);
             Triball = findTarget();
             turn_iter = turn_iter + 1 ;
-            fprintf(fp,"Triballl Location (%.2f, %.2f)", Triball.mapLocation.x, Triball.mapLocation.y);
             if(turn_iter > 7)
             {
-                return false;
+                return HoldingBall;
             }
         }
-        Intake.spin(vex::directionType::fwd);
-        moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100);
-        wait(750,msec);
+
+
+        if(Triball.mapLocation.x && Triball.mapLocation.y != 0.00)
+        {
+            fprintf(fp,"Found Triball! || Triballl Location (%.2f, %.2f)", Triball.mapLocation.x, Triball.mapLocation.y);
+            Intake.spin(vex::directionType::fwd);
+            moveToPosition(Triball.mapLocation.x * 100, Triball.mapLocation.y * 100);
+            wait(750,msec);
+        }
+    
+        Triball = findTarget();
     }
 
     return HoldingBall;
@@ -259,9 +271,11 @@ void ScoreBall()
     {
         moveToPosition(61.35,0.0,90.0);
     }
-   
+    Intake.setVelocity(100,pct);
     Intake.spin(vex::directionType::rev);
-    Chassis.drive_distance(20);
+    wait(500,msec);
+    Chassis.drive_distance(15);
     Intake.stop(coast);
     Chassis.drive_distance(-15);
+    Chassis.turn_to_angle(90);
 }

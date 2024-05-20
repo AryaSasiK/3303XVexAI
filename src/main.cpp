@@ -17,11 +17,11 @@ using namespace vex;
 // GPS Offsets (15in, 24in)
 // X(0,0), Y(-6.5in,8in), Z(9.875,11in), Heading(180,180)
 
-#define  MANAGER_ROBOT    1
+//#define  MANAGER_ROBOT    1
 
 #if defined(MANAGER_ROBOT)
 #pragma message("building for the manager")
-ai::robot_link       link( PORT21, "24in 3303X", linkType::manager );
+ai::robot_link       link( PORT7, "24in 3303X", linkType::manager );
 //24in Robot Specific Objects
 motor leftDriveA = motor(PORT9, ratio6_1, true);  
 motor leftDriveB = motor(PORT10, ratio6_1, true);   
@@ -34,15 +34,15 @@ motor rightDriveD = motor(PORT2, ratio6_1, false);
 motor Catapult = motor(PORT11,ratio36_1,true);
 optical Balldetect = optical(PORT14);
 motor Intake = motor(PORT11, ratio6_1, true);
+motor HangA = motor(PORT13, ratio36_1, false);
+motor HangB = motor(PORT14, ratio36_1, true);
 gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
 const int32_t InertialPort = PORT19;
-const int32_t HangAPort = PORT14;
-const int32_t HangBPort = PORT13;
 double Robot_x_Offset = 25.4;
 
 #else
 #pragma message("building for the worker")
-ai::robot_link       link( PORT21, "15in 3303X", linkType::worker );
+ai::robot_link       link(PORT7, "15in 3303X", linkType::worker );
 //15in Robot Specific Objects
 motor leftDriveA = motor(PORT20, ratio6_1, true);  
 motor leftDriveB = motor(PORT10, ratio6_1, true);   
@@ -52,12 +52,13 @@ motor rightDriveA = motor(PORT12, ratio6_1, false);
 motor rightDriveB = motor(PORT2, ratio6_1, false);
 motor rightDriveC = motor(PORT7, ratio6_1, true);
 motor rightDriveD = motor(PORT4, ratio6_1, true);
+optical Balldetect = optical(PORT14);
 motor Intake = motor(PORT11, ratio6_1, true);
+motor HangA = motor(PORT15, ratio36_1, false);
+motor HangB = motor(PORT13, ratio36_1, true);
 gps GPS = gps(PORT3, 0.0, -146, mm, 180);
 const int32_t InertialPort = PORT16;
-const int32_t HangAPort = PORT15;
-const int32_t HangBPort = PORT13;
-double Robot_x_Offset = 1;
+double Robot_x_Offset = 19;
 
 #endif
 
@@ -74,8 +75,6 @@ ai::jetson  jetson_comms;// create instance of jetson class to receive location 
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
 Drive Chassis(LeftDriveSmart,RightDriveSmart,InertialPort, 3.125, 0.6, 360);
-motor HangA = motor(HangAPort, ratio36_1, false);
-motor HangB = motor(HangBPort, ratio36_1, true);
 motor_group Hang = motor_group(HangA, HangB);
 
 
@@ -87,8 +86,8 @@ void tuned_constants()
   Chassis.set_heading_constants(6, .4, 0, 1, 0);
   Chassis.set_turn_constants(12, 0.25, 0.0005, 1.25, 15);//Tuned
   Chassis.set_swing_constants(12, .3, .001, 2, 15);
-  Chassis.set_drive_exit_conditions(1.5, 300, 5000);
-  Chassis.set_turn_exit_conditions(1, 300, 3000);
+  Chassis.set_drive_exit_conditions(1.5, 300, 1500);
+  Chassis.set_turn_exit_conditions(1, 300, 1000);
   Chassis.set_swing_exit_conditions(1, 300, 3000);
 }
 
@@ -142,19 +141,14 @@ void usercontrol(void)
     wait(20,msec);
   }
 }
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void testing_tuning(void)
 {
-   while(true)
-  {
-    if(getObject())
-    {
-      ScoreBall();
-      wait(2, sec);
-    }
-  }
-}
+ // moveToPosition(-122.75,122.75,135,true,50,50);
+
+}  
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -239,6 +233,7 @@ int main() {
       counter += 1 ;
       if (counter > 15)
       {
+        //ScoreBall();
         //testing_tuning();  
         //fprintf(fp,"\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
         //fprintf(fp,"\nGPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
