@@ -58,7 +58,7 @@ motor HangA = motor(PORT15, ratio36_1, false);
 motor HangB = motor(PORT13, ratio36_1, true);
 gps GPS = gps(PORT3, 0.0, -146, mm, 180);
 const int32_t InertialPort = PORT16;
-double Robot_x_Offset = 19;
+double Robot_x_Offset = 22;
 
 #endif
 
