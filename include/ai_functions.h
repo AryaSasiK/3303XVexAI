@@ -23,4 +23,3 @@ DETECTION_OBJECT findTarget();
 // Retrieves an object (e.g. from the ground or a dispenser)
 bool getObject();
 void ScoreBall();
-

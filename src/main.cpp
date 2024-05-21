@@ -40,7 +40,7 @@ const int32_t HangAPort = PORT14;
 const int32_t HangBPort = PORT13;
 rotation hangEncoder = rotation(PORT5);
 rotation catapultEncoder = rotation(PORT16);
-limit catapultLimit = limit(Brain.ThreeWirePort.D);
+//limit catapultLimit = limit(Brain.ThreeWirePort.D);
 double Robot_x_Offset = 25.4;
 
 #else
@@ -93,7 +93,8 @@ motor_group Hang = motor_group(HangA, HangB);
 
 void tuned_constants()
 {
-  Chassis.set_drive_constants(12, 1.5, 0, 10, 0);
+  //Chassis.set_drive_constants(12, 1.5, 0, 10, 0);
+  Chassis.set_drive_constants(12, 1.4, 0, 16, 0);
   Chassis.set_heading_constants(6, .4, 0, 1, 0);
   Chassis.set_turn_constants(12, 0.25, 0.0005, 1.25, 15);//Tuned
   Chassis.set_swing_constants(12, .3, .001, 2, 15);
@@ -165,6 +166,11 @@ void testing_tuning(void)
   }
 }
 
+
+void pidTuning()
+{
+  Chassis.turn_to_angle(90);
+}
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                          Auto_Isolation Task                              */
@@ -192,17 +198,7 @@ void auto_Isolation(void)
 
 void auto_Interaction(void) 
 {
-  
-  fprintf(fp, "Started Auto Interaction");
-  Intake.spin(fwd);
-  pre_auton();
-  fprintf(fp, "Done with pre auton");
-  Intake.stop();
-  Hang.spin(fwd);
-  waitUntil(hangEncoder.angle(degrees) >= 50);
-  Hang.stop();
   endgame();
-  fprintf(fp, "Finished Auto Interaction");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -233,11 +229,13 @@ void autonomousMain(void)
 }
 
 /**
- * COntains the tasks need to be accomplished at the end of the gaem (hang, etc.)
+ * Contains the tasks need to be accomplished at the end of the game (hang, etc.)
 */
 void endgame () {
-  Point goalAlignPos = Point(93.00, -121.00);
+  
+  Point goalAlignPos = Point(65.00, 0);
   moveToPoint(&goalAlignPos, true);
+  
 }
 
 int main() {
@@ -258,16 +256,13 @@ int main() {
   while(1) 
   {
 
-      Position();
-
-      fprintf(fp, "test");
-
       jetson_comms.get_data( &local_map ); // get last map data
       link.set_remote_location( local_map.pos.x, local_map.pos.y, local_map.pos.az, local_map.pos.status );// set our location to be sent to partner robot
 
       counter += 1 ;
       if (counter > 15)
       {
+        printPosition(distanceUnits::cm);
         //testing_tuning();  
         //fprintf(fp,"\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
         //fprintf(fp,"\nGPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
@@ -281,21 +276,25 @@ int main() {
   }
 }
 
+
+void printPosition (vex::distanceUnits units = vex::distanceUnits::cm)
+{
+  fprintf(fp,"Actual position is: X: %.2f ", GPS.xPosition(units));
+  fprintf(fp, "and Y: %.2f \n", GPS.yPosition(units));  
+}
+
+
 /**
  * Catapult control functions
 */
 
 
-bool LimitControl = false;
+//bool LimitControl = false;
 
 
-void Position ()
-{
-  while(1==1)
-    fprintf(fp,"Actual position is: X:\n",GPS.xPosition(mm), "and Y \n", GPS.yPosition(mm)); 
-}
 
 
+/*
 void CataSet ()
 {
   while (LimitControl == false)
@@ -405,3 +404,4 @@ bool Stuck = false;
   LeftDriveSmart.setStopping(coast);
   
 }
+*/

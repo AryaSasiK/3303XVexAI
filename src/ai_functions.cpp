@@ -73,6 +73,7 @@ void moveToPoint(Point* Target, bool frontfacing)
     bool arrivedtoTarget = false;
     while(!arrivedtoTarget)
     {
+        wait(1000, msec);
         //Check to see if we have arrived to target 
         float threshold = (GPS.xPosition(distanceUnits::cm) - Target->Xcord) * (GPS.xPosition(distanceUnits::cm) - Target->Xcord) + (GPS.yPosition(distanceUnits::cm) -Target->Ycord ) * (GPS.yPosition(distanceUnits::cm) - Target->Ycord );
         if (threshold <= pow(ThresholdRad, 2))
