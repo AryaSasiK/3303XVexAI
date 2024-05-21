@@ -25,6 +25,7 @@
 #include "JAR-Template/util.h"
 #include "JAR-Template/PID.h"
 
+#include "main.h"
 
 #define waitUntil(condition)                                                   \
   do {                                                                         \

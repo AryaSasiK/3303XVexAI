@@ -35,9 +35,12 @@ motor Catapult = motor(PORT11,ratio36_1,true);
 optical Balldetect = optical(PORT14);
 motor Intake = motor(PORT11, ratio6_1, true);
 gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
-const int32_t InertialPort = PORT19;
+const int32_t InertialPort = PORT18;
 const int32_t HangAPort = PORT14;
 const int32_t HangBPort = PORT13;
+rotation hangEncoder = rotation(PORT5);
+rotation catapultEncoder = rotation(PORT16);
+limit catapultLimit = limit(Brain.ThreeWirePort.D);
 double Robot_x_Offset = 25.4;
 
 #else
@@ -149,7 +152,6 @@ void usercontrol(void)
     wait(20,msec);
   }
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void testing_tuning(void)
 {
@@ -190,7 +192,17 @@ void auto_Isolation(void)
 
 void auto_Interaction(void) 
 {
-
+  
+  fprintf(fp, "Started Auto Interaction");
+  Intake.spin(fwd);
+  pre_auton();
+  fprintf(fp, "Done with pre auton");
+  Intake.stop();
+  Hang.spin(fwd);
+  waitUntil(hangEncoder.angle(degrees) >= 50);
+  Hang.stop();
+  endgame();
+  fprintf(fp, "Finished Auto Interaction");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -220,6 +232,13 @@ void autonomousMain(void)
   firstAutoFlag = false;
 }
 
+/**
+ * COntains the tasks need to be accomplished at the end of the gaem (hang, etc.)
+*/
+void endgame () {
+  Point goalAlignPos = Point(93.00, -121.00);
+  moveToPoint(&goalAlignPos, true);
+}
 
 int main() {
 
@@ -232,14 +251,17 @@ int main() {
   pre_auton(); 
   // Set up callbacks for autonomous and driver control periods.
   Competition.drivercontrol(usercontrol);
-  Competition.autonomous(testing_tuning);
+  Competition.autonomous(auto_Interaction);
   // Competition.autonomous(autonomousMain);
   this_thread::sleep_for(loop_time);
   int counter = 0 ;
   while(1) 
   {
 
-      
+      Position();
+
+      fprintf(fp, "test");
+
       jetson_comms.get_data( &local_map ); // get last map data
       link.set_remote_location( local_map.pos.x, local_map.pos.y, local_map.pos.az, local_map.pos.status );// set our location to be sent to partner robot
 
