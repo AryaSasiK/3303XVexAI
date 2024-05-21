@@ -35,7 +35,7 @@ motor Catapult = motor(PORT11,ratio36_1,true);
 optical Balldetect = optical(PORT14);
 motor Intake = motor(PORT11, ratio6_1, true);
 gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
-const int32_t InertialPort = PORT18;
+const int32_t InertialPort = PORT19;
 const int32_t HangAPort = PORT14;
 const int32_t HangBPort = PORT13;
 double Robot_x_Offset = 25.4;
@@ -61,16 +61,23 @@ double Robot_x_Offset = 1;
 
 #endif
 
+#define BlueMinHue 90
+#define BlueMaxHue 120
+#define RedMinHue
+#define RedMaxHue
 
+
+// Field object for path following
 Field field(vex::color::blue,Robot_x_Offset);
+// File for fprintf function
 FILE *fp = fopen("/dev/serial2","wb");
+// Standard objects
 brain Brain;
 controller Controller1 = controller(primary);
 competition Competition;
 ai::jetson  jetson_comms;// create instance of jetson class to receive location and other
 
-//Universal Objects (Do not comment out)
-
+// Universal Objects (Do not comment out)
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
 Drive Chassis(LeftDriveSmart,RightDriveSmart,InertialPort, 3.125, 0.6, 360);
@@ -168,8 +175,7 @@ void testing_tuning(void)
 
 void auto_Isolation(void) 
 {
-//  Chassis.turn_to_angle(90);
- Chassis.drive_distance(50);
+ 
 }
 
 /*---------------------------------------------------------------------------*/
@@ -226,7 +232,7 @@ int main() {
   pre_auton(); 
   // Set up callbacks for autonomous and driver control periods.
   Competition.drivercontrol(usercontrol);
-  Competition.autonomous(auto_Isolation);
+  Competition.autonomous(testing_tuning);
   // Competition.autonomous(autonomousMain);
   this_thread::sleep_for(loop_time);
   int counter = 0 ;
@@ -251,4 +257,129 @@ int main() {
       // Allow other tasks to run
       this_thread::sleep_for(loop_time);
   }
+}
+
+/**
+ * Catapult control functions
+*/
+
+
+bool LimitControl = false;
+
+
+void Position ()
+{
+  while(1==1)
+    fprintf(fp,"Actual position is: X:\n",GPS.xPosition(mm), "and Y \n", GPS.yPosition(mm)); 
+}
+
+
+void CataSet ()
+{
+  while (LimitControl == false)
+    {
+      Catapult.spin(fwd,-(abs(100-(100*atan(0.02*catapultEncoder.angle())))),percent);
+      if(catapultLimit.pressing())
+      LimitControl = true;
+    }
+}
+
+void CataShoot ()
+{
+
+  Catapult.spinFor(fwd,-100,degrees);
+  LimitControl = false;
+  CataSet();
+}
+
+
+void StartSet()
+{
+  Hang.spin(fwd);
+  waitUntil(hangEncoder.angle(degrees) >= 50);
+  Intake.spin(fwd);
+  Catapult.spinFor(fwd,-100,degrees);
+  CataSet();
+  Catapult.stop();
+  waitUntil(hangEncoder.angle(degrees) >= 200);
+  Hang.stop();
+}
+
+void ImproSwing(int LVel, int RVel, int Deg)
+{
+  
+  LeftDriveSmart.spin(fwd,LVel,percent);
+  RightDriveSmart.spin(fwd,RVel,percent);
+   waitUntil(abs(LeftDriveSmart.position(degrees)) >= Deg || abs(RightDriveSmart.position(degrees)) >= Deg );
+  LeftDriveSmart.stop();
+  RightDriveSmart.stop();
+}
+
+
+void DemoTriball(int Preloads)
+{
+  StartSet();
+  int Times = 0;
+  LeftDriveSmart.setStopping(brake);
+  LeftDriveSmart.setVelocity(100,percent);
+  RightDriveSmart.setVelocity(100,percent);
+  Intake.spin(fwd,-100,percent);
+ 
+  ImproSwing(20,-80,700);
+  Chassis.drive_distance(-30,65);
+//Chassis.turn_to_angle(20);
+  CataShoot();
+  Chassis.drive_distance(25,45);
+  
+  //turnTo(30,60,1);
+  //Chassis.drive_distance(10);
+  LeftDriveSmart.spin(fwd,50,percent);
+  RightDriveSmart.spin(fwd,50,percent);
+  wait(700,msec);
+  LeftDriveSmart.spin(fwd,10,percent);
+  RightDriveSmart.spin(fwd,10,percent);
+  
+
+
+
+bool Stuck = false;
+
+  while ( Times <= Preloads &&  Stuck == false )
+  {
+    LeftDriveSmart.stop();
+    RightDriveSmart.stop();
+    int timeout = 0;
+    LimitControl = false;
+    //waitUntil(Balldetect.brightness() > 70 && Balldetect.brightness() < 110);
+    while(!(Balldetect.hue() > BlueMinHue && Balldetect. hue() < BlueMaxHue))
+    {
+      Intake.spin(fwd,-100,percent);
+      timeout += 1;
+      wait(25,msec);
+      if(timeout > 240)
+      {
+        Stuck = true;
+        break;
+      }
+    }
+    if(Stuck == true)
+      break;
+    Intake.spin(fwd,-100,percent);
+    wait(1000,msec);
+    LeftDriveSmart.spinFor(fwd, -50, degrees,false);
+    RightDriveSmart.spinFor(fwd,-400,degrees);
+    CataShoot();
+    Catapult.stop();
+    RightDriveSmart.spinFor(fwd,400,degrees);
+    LeftDriveSmart.spin(fwd,60,percent);
+    RightDriveSmart.spin(fwd,60,percent);
+    wait(150,msec);
+    Times =+ 1;
+  } 
+
+  
+
+  Intake.stop();
+  LeftDriveSmart.setStopping(coast);
+  
 }
