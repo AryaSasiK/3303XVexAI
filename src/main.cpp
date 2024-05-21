@@ -35,7 +35,7 @@ motor Catapult = motor(PORT11,ratio36_1,true);
 optical Balldetect = optical(PORT14);
 motor Intake = motor(PORT11, ratio6_1, true);
 gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
-const int32_t InertialPort = PORT19;
+const int32_t InertialPort = PORT18;
 const int32_t HangAPort = PORT14;
 const int32_t HangBPort = PORT13;
 double Robot_x_Offset = 25.4;
@@ -168,7 +168,8 @@ void testing_tuning(void)
 
 void auto_Isolation(void) 
 {
- 
+//  Chassis.turn_to_angle(90);
+ Chassis.drive_distance(50);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -225,7 +226,7 @@ int main() {
   pre_auton(); 
   // Set up callbacks for autonomous and driver control periods.
   Competition.drivercontrol(usercontrol);
-  Competition.autonomous(testing_tuning);
+  Competition.autonomous(auto_Isolation);
   // Competition.autonomous(autonomousMain);
   this_thread::sleep_for(loop_time);
   int counter = 0 ;
