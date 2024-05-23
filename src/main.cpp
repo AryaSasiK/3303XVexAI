@@ -299,7 +299,7 @@ namespace matchload {
   bool LimitControl = false;
 
   /**
-   * 
+   * This sets the catapult in the down position
   */
   void setCatapultDown ()
   {
