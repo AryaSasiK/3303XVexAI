@@ -1,9 +1,7 @@
 #include "vex.h"
 using namespace vex;
 
-extern vex::brain Brain;
-
-
+extern brain Brain;
 extern Drive Chassis;
 extern gps GPS;
 extern motor Intake; 

@@ -39,6 +39,7 @@ motor HangB = motor(PORT14, ratio36_1, true);
 gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
 const int32_t InertialPort = PORT19;
 double Robot_x_Offset = 25.4;
+double Intake_Offset = 15;
 
 #else
 #pragma message("building for the worker")
@@ -58,12 +59,12 @@ motor HangA = motor(PORT15, ratio36_1, false);
 motor HangB = motor(PORT13, ratio36_1, true);
 gps GPS = gps(PORT3, 0.0, -146, mm, 180);
 const int32_t InertialPort = PORT16;
-double Robot_x_Offset = 22;
-
+double Robot_x_Offset = 22.0;
+double Intake_Offset = 9.0;
 #endif
 
-
-Field field(vex::color::blue,Robot_x_Offset);
+// Red Side = true || Blue Side = false
+Field field(true,Robot_x_Offset,Intake_Offset);
 FILE *fp = fopen("/dev/serial2","wb");
 brain Brain;
 controller Controller1 = controller(primary);
@@ -71,7 +72,6 @@ competition Competition;
 ai::jetson  jetson_comms;// create instance of jetson class to receive location and other
 
 //Universal Objects (Do not comment out)
-
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
 Drive Chassis(LeftDriveSmart,RightDriveSmart,InertialPort, 3.125, 0.6, 360);
@@ -94,14 +94,7 @@ void tuned_constants()
 void pre_auton(void) 
 {
   tuned_constants();
-  Brain.Screen.clearScreen();
-  Brain.Screen.print("Device initialization...");
-  Brain.Screen.setCursor(2, 1);
-  // calibrate the drivetrain Inertial
   Chassis.Gyro.calibrate();
-  Brain.Screen.print("Calibrating Inertial for Chassis");
-  Brain.Screen.setCursor(3, 1);
-  // wait for the Inertial calibration process to finish
   while (Chassis.Gyro.isCalibrating()) 
   {
     wait(25, msec);
@@ -146,9 +139,16 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
- // moveToPosition(-122.75,122.75,135,true,50,50);
-
-}  
+  //wait(5,sec);
+  while(true)
+  {
+    if(getObject(true,true))
+    {
+      wait(500,msec);
+      ScoreBall();
+    }
+  }
+} 
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -233,10 +233,8 @@ int main() {
       counter += 1 ;
       if (counter > 15)
       {
-        //ScoreBall();
-        //testing_tuning();  
-        //fprintf(fp,"\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
-        //fprintf(fp,"\nGPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
+        //fprintf(fp,"\rLocal Map Pos Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
+        //fprintf(fp,"\rGPS Pos Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
         counter = 0 ;
       }
       // request new data    
