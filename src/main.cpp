@@ -44,7 +44,7 @@ motor rightDriveB = motor(PORT4, ratio6_1, false);
 motor rightDriveC = motor(PORT1, ratio6_1, false);
 motor rightDriveD = motor(PORT2, ratio6_1, false);
 motor Catapult = motor(PORT11,ratio36_1,true);
-optical Balldetect = optical(PORT14);
+optical Balldetect = optical(PORT6);
 gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
 const int32_t InertialPort = PORT18;
 const int32_t HangAPort = PORT14;
@@ -202,7 +202,9 @@ void auto_Isolation(void)
 
 void auto_Interaction(void) 
 {
+  matchload::startSubsystems(false);
   matchload::ScoreAllianceTriball();
+ // matchload::runMatchload(3);
   //matchload::runMatchload(3);
 }
 
@@ -270,7 +272,8 @@ int main() {
         //printPosition(distanceUnits::cm);
         //testing_tuning();  
         //fprintf(fp,"\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
-        //fprintf(fp,"\nGPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
+        fprintf(fp,"\nGPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
+        
         counter = 0 ;
       }
       // request new data    
@@ -302,8 +305,11 @@ namespace matchload {
   /**
    * This sets the catapult in the down position
   */
-  void setCatapultDown ()
+  void setCatapultDown (bool Shoot = true)
   {
+
+    if(Shoot == true)
+    {
     while (LimitControl == false)
       {
         if(catapultEncoder.angle() > 150)
@@ -316,8 +322,30 @@ namespace matchload {
         LimitControl = true;
 
       }
+    }
+
+    else
+    {
+      while(catapultEncoder.angle(degrees) < 50 || catapultEncoder.angle(degrees) > 65)
+        {
+
+          if(catapultEncoder.angle(degrees) < 80)
+        {
+            Catapult.spin(fwd,-(AtanFunction),percent);
+        }  
+          else
+            Catapult.spin(fwd,-30,percent);
+        
+        }
+        
+        Catapult.stop();
+    }
 
   }
+
+
+
+
 
   void catapultShoot ()
   {
@@ -329,20 +357,26 @@ namespace matchload {
 
   /**
    * Starts the various subsystems at te start of the game.
-   * Sets the hang in the down position, releases intake, and loads catapult.
+   * Sets the hang in the down position, releases intake, and TargetLoads catapult.
   */
-  void startSubsystems()
+  void startSubsystems(bool isShooting = true)
   {
-    Hang.spin(fwd);
-    waitUntil(hangEncoder.angle(degrees) >= 50);
+  //  Hang.spin(fwd);
+  //  waitUntil(hangEncoder.angle(degrees) >= 50);
     Intake.setVelocity(100, pct);
     Intake.spin(fwd);
     //Catapult.spinFor(fwd,-100,degrees);
+    if(isShooting == true)
     setCatapultDown();
+
+    else
+    setCatapultDown(false);
+
     Catapult.stop();
-    waitUntil(hangEncoder.angle(degrees) >= 200);
+   // waitUntil(hangEncoder.angle(degrees) >= 200);
     Hang.stop();
     Intake.stop();
+    wait(600,msec);
   }
 
 
@@ -357,44 +391,52 @@ namespace matchload {
     LeftDriveSmart.spin(fwd,50,percent);
     RightDriveSmart.spin(fwd,50,percent);
     wait(300,msec);
-    while(!(Balldetect.hue() > BlueMinHue && Balldetect. hue() < BlueMaxHue))
+    Balldetect.objectDetectThreshold(30);
+    int timeout2 = 0;
+    bool loseball = false;
+    while(!Balldetect.isNearObject())
     {
+      timeout2 =+ 1;
       Intake.spin(fwd,-100,percent);
-      wait(25,msec);
+      if (timeout2 > 240)
+       loseball = true;
+      if(loseball == true)
+      {
+        Chassis.drive_distance(-3);
+        Chassis.drive_distance(3);
+        timeout2 = 0;
+        loseball = false;
+      }
+
     }
     Intake.stop();
     //moveToPosition(80,85,270,false,75,80);
     //
-  ImproSwing(-70,-100,500);
-  ImproSwing(-100,-50,500);
+  ImproSwing(-80,-100,3000);
+//  ImproSwing(-100,-50,500);
   Chassis.turn_to_angle(90);
-  moveToPosition(100, GPS.yPosition(mm), GPS.heading(),true,100,100);
-  Intake.spin(fwd,-100,pct);
-  moveToPosition(120, GPS.yPosition(mm), GPS.heading(),true,100,100);
-  Chassis.drive_distance(-10);
+ // moveToPosition(15, 30, 90,true,100,100);
+  Chassis.drive_distance(20);
+  Intake.spin(fwd,100,pct);
+  wait(200,msec);
+  Chassis.drive_distance(5);
+  Chassis.drive_distance(-6);
+  Chassis.drive_distance(12);
+  Chassis.drive_distance(-15);
   Intake.stop();
-  moveToPosition(85,85,45,true,75,100); 
-  moveToPosition(120,120,45,true,75,100);
-//
-
-//moveToPosition(37,85,270,true,75,50);
-Intake.spin(fwd);
-wait(600,msec);
-Chassis.drive_distance(5);
-Chassis.drive_distance(-7);
-Chassis.drive_distance(5);
-Chassis.drive_distance(-20);
-moveToPosition(120,120,45,true,75,100);
-
+  Chassis.turn_to_angle(0);
+  ImproSwing(100,30,900);
+  moveToPosition(105,105,45,false,70,70);
+  Intake.spin(fwd,-100,pct);
 
   }
 
-  void runMatchload (int loads) {
+  void runMatchload (int TargetLoads) {
     
     bool Stuck = false;
-    int Times = 0;
+    int Loads = 0;
 
-      while ( Times <= loads &&  Stuck == false )
+      while ( Loads <= TargetLoads &&  Stuck == false )
       {
         LeftDriveSmart.stop();
         RightDriveSmart.stop();
@@ -429,7 +471,7 @@ moveToPosition(120,120,45,true,75,100);
         wait(700,msec);
         LeftDriveSmart.spin(fwd,10,percent);
         RightDriveSmart.spin(fwd,10,percent);
-        Times += 1;
+        Loads += 1;
       } 
 
   }
@@ -437,75 +479,25 @@ moveToPosition(120,120,45,true,75,100);
 
   void ImproSwing(int LVel, int RVel, int Deg)
   {
-    
-    LeftDriveSmart.spin(fwd,LVel,percent);
-    RightDriveSmart.spin(fwd,RVel,percent);
+    LeftDriveSmart.resetPosition();
+    RightDriveSmart.resetPosition();
+    Chassis.drive_with_voltage(LVel*0.12,RVel*0.12);
+    //LeftDriveSmart.spin(fwd,LVel,percent);
+    //RightDriveSmart.spin(fwd,RVel,percent);
     waitUntil(abs(LeftDriveSmart.position(degrees)) >= Deg || abs(RightDriveSmart.position(degrees)) >= Deg );
     LeftDriveSmart.stop();
     RightDriveSmart.stop();
   }
 
 
-  void ShootingRoutine(int Preloads)
+  void ShootingRoutine(int TargetLoads)
   {
     startSubsystems();
-    int Times = 0;
-    LeftDriveSmart.setStopping(brake);
-    LeftDriveSmart.setVelocity(100,percent);
-    RightDriveSmart.setVelocity(100,percent);
+    ScoreAllianceTriball();
     Intake.spin(fwd,-100,percent);
-    ImproSwing(20,-80,700);
-    Chassis.drive_distance(-30,65);
-    catapultShoot();
-    Chassis.drive_distance(25,45);
-    LeftDriveSmart.spin(fwd,50,percent);
-    RightDriveSmart.spin(fwd,50,percent);
-    wait(700,msec);
-    LeftDriveSmart.spin(fwd,10,percent);
-    RightDriveSmart.spin(fwd,10,percent);
-    
-
-
-
-    bool Stuck = false;
-
-    while ( Times <= Preloads &&  Stuck == false )
-    {
-      LeftDriveSmart.stop();
-      RightDriveSmart.stop();
-      int timeout = 0;
-      LimitControl = false;
-      //waitUntil(Balldetect.brightness() > 70 && Balldetect.brightness() < 110);
-      while(!(Balldetect.hue() > BlueMinHue && Balldetect. hue() < BlueMaxHue))
-      {
-        Intake.spin(fwd,-100,percent);
-        timeout += 1;
-        wait(25,msec);
-        if(timeout > 240)
-        {
-          Stuck = true;
-          break;
-        }
-      }
-      if(Stuck == true)
-        break;
-      Intake.spin(fwd,-100,percent);
-      wait(1000,msec);
-      LeftDriveSmart.spinFor(fwd, -50, degrees,false);
-      RightDriveSmart.spinFor(fwd,-400,degrees);
-      catapultShoot();
-      Catapult.stop();
-      RightDriveSmart.spinFor(fwd,400,degrees);
-      LeftDriveSmart.spin(fwd,60,percent);
-      RightDriveSmart.spin(fwd,60,percent);
-      wait(150,msec);
-      Times =+ 1;
-    } 
-
-    
-
+    Chassis.drive_distance(15);
+    runMatchload(TargetLoads);
     Intake.stop();
-    LeftDriveSmart.setStopping(coast);
     
   }
 

@@ -9,11 +9,11 @@ void Position();
 void printPosition (vex::distanceUnits units);
 
 namespace matchload {
-    void setCatapultDown();
+    void setCatapultDown(bool Shoot);
 
     void catapultShoot();
 
-    void startSubsystems();
+    void startSubsystems(bool IsShooting);
 
     void ScoreAllianceTriball();
 
