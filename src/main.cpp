@@ -305,10 +305,17 @@ namespace matchload {
   {
     while (LimitControl == false)
       {
+        if(catapultEncoder.angle() > 150)
+        Catapult.spin(fwd,-70,percent);
+
+        else
         Catapult.spin(fwd,-(abs(100-(100*atan(0.02*catapultEncoder.angle())))),percent);
+        
         if(catapultLimit.pressing() || (catapultEncoder.angle(degrees) > 72 && catapultEncoder.angle(degrees) < 150))
         LimitControl = true;
+
       }
+
   }
 
   void catapultShoot ()
