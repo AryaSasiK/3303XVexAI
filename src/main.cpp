@@ -198,7 +198,7 @@ void auto_Isolation(void)
 
 void auto_Interaction(void) 
 {
-  endgame();
+  matchload::runMatchload(3);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -288,120 +288,183 @@ void printPosition (vex::distanceUnits units = vex::distanceUnits::cm)
  * Catapult control functions
 */
 
+namespace matchload {
 
-//bool LimitControl = false;
-
-
-
-
-/*
-void CataSet ()
-{
-  while (LimitControl == false)
-    {
-      Catapult.spin(fwd,-(abs(100-(100*atan(0.02*catapultEncoder.angle())))),percent);
-      if(catapultLimit.pressing())
-      LimitControl = true;
-    }
-}
-
-void CataShoot ()
-{
-
-  Catapult.spinFor(fwd,-100,degrees);
-  LimitControl = false;
-  CataSet();
-}
-
-
-void StartSet()
-{
-  Hang.spin(fwd);
-  waitUntil(hangEncoder.angle(degrees) >= 50);
-  Intake.spin(fwd);
-  Catapult.spinFor(fwd,-100,degrees);
-  CataSet();
-  Catapult.stop();
-  waitUntil(hangEncoder.angle(degrees) >= 200);
-  Hang.stop();
-}
-
-void ImproSwing(int LVel, int RVel, int Deg)
-{
   
-  LeftDriveSmart.spin(fwd,LVel,percent);
-  RightDriveSmart.spin(fwd,RVel,percent);
-   waitUntil(abs(LeftDriveSmart.position(degrees)) >= Deg || abs(RightDriveSmart.position(degrees)) >= Deg );
-  LeftDriveSmart.stop();
-  RightDriveSmart.stop();
-}
-
-
-void DemoTriball(int Preloads)
-{
-  StartSet();
-  int Times = 0;
-  LeftDriveSmart.setStopping(brake);
-  LeftDriveSmart.setVelocity(100,percent);
-  RightDriveSmart.setVelocity(100,percent);
-  Intake.spin(fwd,-100,percent);
- 
-  ImproSwing(20,-80,700);
-  Chassis.drive_distance(-30,65);
-//Chassis.turn_to_angle(20);
-  CataShoot();
-  Chassis.drive_distance(25,45);
   
-  //turnTo(30,60,1);
-  //Chassis.drive_distance(10);
-  LeftDriveSmart.spin(fwd,50,percent);
-  RightDriveSmart.spin(fwd,50,percent);
-  wait(700,msec);
-  LeftDriveSmart.spin(fwd,10,percent);
-  RightDriveSmart.spin(fwd,10,percent);
-  
+  bool LimitControl = false;
 
-
-
-bool Stuck = false;
-
-  while ( Times <= Preloads &&  Stuck == false )
+  /**
+   * 
+  */
+  void setCatapultDown ()
   {
+    while (LimitControl == false)
+      {
+        Catapult.spin(fwd,-(abs(100-(100*atan(0.02*catapultEncoder.angle())))),percent);
+        if(catapultLimit.pressing())
+        LimitControl = true;
+      }
+  }
+
+  void catapultShoot ()
+  {
+
+    Catapult.spinFor(fwd,-100,degrees);
+    LimitControl = false;
+    setCatapultDown();
+  }
+
+  /**
+   * Starts the various subsystems at te start of the game.
+   * Sets the hang in the down position, releases intake, and loads catapult.
+  */
+  void startSubsystems()
+  {
+    Hang.spin(fwd);
+    waitUntil(hangEncoder.angle(degrees) >= 50);
+    Intake.spin(fwd);
+    Catapult.spinFor(fwd,-100,degrees);
+    setCatapultDown();
+    Catapult.stop();
+    waitUntil(hangEncoder.angle(degrees) >= 200);
+    Hang.stop();
+  }
+
+
+  void runMatchload (double time, vex::timeUnits unit) {
+
+  }
+
+  void runMatchload (int loads) {
+    
+    bool Stuck = false;
+    int Times = 0;
+
+      while ( Times <= loads &&  Stuck == false )
+      {
+        LeftDriveSmart.stop();
+        RightDriveSmart.stop();
+        int timeout = 0;
+        LimitControl = false;
+        Balldetect.objectDetectThreshold(30);
+        //waitUntil(Balldetect.brightness() > 70 && Balldetect.brightness() < 110);
+        //while(!(Balldetect.hue() > BlueMinHue && Balldetect. hue() < BlueMaxHue))
+        while(!Balldetect.isNearObject())
+        {
+          Intake.spin(fwd,-100,percent);
+          timeout += 1;
+          wait(25,msec);
+          if(timeout > 240)
+          {
+            Stuck = true;
+            break;
+          }
+        }
+        if(Stuck == true)
+          break;
+
+        Intake.spin(fwd,-100,percent);
+        wait(1000,msec);
+        Chassis.right_swing_to_angle(80);
+        matchload::catapultShoot();
+        if(abs(GPS.xPosition(mm)) == (120+-5) || abs(GPS.yPosition(mm)) == (120+-5))
+        moveToPosition(135,135,45,false,80,70);
+
+        // moveToPosition(-135,-135,225,false,80,70); blue
+        Chassis.turn_to_angle(45);
+        Chassis.drive_distance(5);
+        wait(700,msec);
+        LeftDriveSmart.spin(fwd,10,percent);
+        RightDriveSmart.spin(fwd,10,percent);
+    /*    RightDriveSmart.spinFor(fwd,400,degrees);
+        LeftDriveSmart.spin(fwd,60,percent);
+        RightDriveSmart.spin(fwd,60,percent);
+        wait(150,msec);
+    */
+        Times += 1;
+      } 
+
+  }
+
+
+  void ImproSwing(int LVel, int RVel, int Deg)
+  {
+    
+    LeftDriveSmart.spin(fwd,LVel,percent);
+    RightDriveSmart.spin(fwd,RVel,percent);
+    waitUntil(abs(LeftDriveSmart.position(degrees)) >= Deg || abs(RightDriveSmart.position(degrees)) >= Deg );
     LeftDriveSmart.stop();
     RightDriveSmart.stop();
-    int timeout = 0;
-    LimitControl = false;
-    //waitUntil(Balldetect.brightness() > 70 && Balldetect.brightness() < 110);
-    while(!(Balldetect.hue() > BlueMinHue && Balldetect. hue() < BlueMaxHue))
-    {
-      Intake.spin(fwd,-100,percent);
-      timeout += 1;
-      wait(25,msec);
-      if(timeout > 240)
-      {
-        Stuck = true;
-        break;
-      }
-    }
-    if(Stuck == true)
-      break;
+  }
+
+
+  void DemoTriball(int Preloads)
+  {
+    startSubsystems();
+    int Times = 0;
+    LeftDriveSmart.setStopping(brake);
+    LeftDriveSmart.setVelocity(100,percent);
+    RightDriveSmart.setVelocity(100,percent);
     Intake.spin(fwd,-100,percent);
-    wait(1000,msec);
-    LeftDriveSmart.spinFor(fwd, -50, degrees,false);
-    RightDriveSmart.spinFor(fwd,-400,degrees);
-    CataShoot();
-    Catapult.stop();
-    RightDriveSmart.spinFor(fwd,400,degrees);
-    LeftDriveSmart.spin(fwd,60,percent);
-    RightDriveSmart.spin(fwd,60,percent);
-    wait(150,msec);
-    Times =+ 1;
-  } 
-
   
+    ImproSwing(20,-80,700);
+    Chassis.drive_distance(-30,65);
+  //Chassis.turn_to_angle(20);
+    catapultShoot();
+    Chassis.drive_distance(25,45);
+    
+    //turnTo(30,60,1);
+    //Chassis.drive_distance(10);
+    LeftDriveSmart.spin(fwd,50,percent);
+    RightDriveSmart.spin(fwd,50,percent);
+    wait(700,msec);
+    LeftDriveSmart.spin(fwd,10,percent);
+    RightDriveSmart.spin(fwd,10,percent);
+    
 
-  Intake.stop();
-  LeftDriveSmart.setStopping(coast);
-  
+
+
+    bool Stuck = false;
+
+    while ( Times <= Preloads &&  Stuck == false )
+    {
+      LeftDriveSmart.stop();
+      RightDriveSmart.stop();
+      int timeout = 0;
+      LimitControl = false;
+      //waitUntil(Balldetect.brightness() > 70 && Balldetect.brightness() < 110);
+      while(!(Balldetect.hue() > BlueMinHue && Balldetect. hue() < BlueMaxHue))
+      {
+        Intake.spin(fwd,-100,percent);
+        timeout += 1;
+        wait(25,msec);
+        if(timeout > 240)
+        {
+          Stuck = true;
+          break;
+        }
+      }
+      if(Stuck == true)
+        break;
+      Intake.spin(fwd,-100,percent);
+      wait(1000,msec);
+      LeftDriveSmart.spinFor(fwd, -50, degrees,false);
+      RightDriveSmart.spinFor(fwd,-400,degrees);
+      catapultShoot();
+      Catapult.stop();
+      RightDriveSmart.spinFor(fwd,400,degrees);
+      LeftDriveSmart.spin(fwd,60,percent);
+      RightDriveSmart.spin(fwd,60,percent);
+      wait(150,msec);
+      Times =+ 1;
+    } 
+
+    
+
+    Intake.stop();
+    LeftDriveSmart.setStopping(coast);
+    
+  }
+
 }
-*/

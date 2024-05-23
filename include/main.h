@@ -6,14 +6,20 @@ void pidTuning();
 
 void Position();
 
-void CataSet();
-
-void CataShoot();
-
-void StartSet();
-
-void ImproSwing(int LVel, int RVel, int Deg);
-
-void DemoTriball(int Preloads);
-
 void printPosition (vex::distanceUnits units);
+
+namespace matchload {
+    void setCatapultDown();
+
+    void catapultShoot();
+
+    void startSubsystems();
+
+    void runMatchload (double time, vex::timeUnits  unit);
+
+    void runMatchload (int loads);
+
+    void ImproSwing(int LVel, int RVel, int Deg);
+
+    void DemoTriball(int Preloads);
+}

@@ -8,5 +8,7 @@ extern motor Intake;
 extern motor_group Hang;
 extern optical Balldetect;
 extern controller Controller;
-
+extern rotation hangEncoder;
+extern rotation catapultEncoder;
+extern limit catapultLimit;
 
