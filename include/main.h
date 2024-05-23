@@ -15,6 +15,8 @@ namespace matchload {
 
     void startSubsystems();
 
+    void ScoreAllianceTriball();
+
     void runMatchload (double time, vex::timeUnits  unit);
 
     void runMatchload (int loads);

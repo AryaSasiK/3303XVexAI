@@ -80,6 +80,8 @@ double Robot_x_Offset = 1;
 #define BlueMaxHue 120
 #define RedMinHue
 #define RedMaxHue
+#define AtanFunction abs(63*atan(0.07*(76-catapultEncoder.angle(degrees))))
+
 
 // Field object for path following
 Field field(vex::color::blue,Robot_x_Offset);
@@ -200,7 +202,7 @@ void auto_Isolation(void)
 
 void auto_Interaction(void) 
 {
-  matchload::startSubsystems();
+  matchload::ScoreAllianceTriball();
   //matchload::runMatchload(3);
 }
 
@@ -308,7 +310,7 @@ namespace matchload {
         Catapult.spin(fwd,-70,percent);
 
         else
-        Catapult.spin(fwd,-(abs(100-(100*atan(0.02*catapultEncoder.angle())))),percent);
+        Catapult.spin(fwd,-(AtanFunction),percent);
         
         if(catapultLimit.pressing() || (catapultEncoder.angle(degrees) > 72 && catapultEncoder.angle(degrees) < 150))
         LimitControl = true;
@@ -348,6 +350,45 @@ namespace matchload {
 
   }
 
+
+  void ScoreAllianceTriball()
+  {
+    Intake.spin(fwd,-100,percent);
+    LeftDriveSmart.spin(fwd,50,percent);
+    RightDriveSmart.spin(fwd,50,percent);
+    wait(300,msec);
+    while(!(Balldetect.hue() > BlueMinHue && Balldetect. hue() < BlueMaxHue))
+    {
+      Intake.spin(fwd,-100,percent);
+      wait(25,msec);
+    }
+    Intake.stop();
+    //moveToPosition(80,85,270,false,75,80);
+    //
+  ImproSwing(-70,-100,500);
+  ImproSwing(-100,-50,500);
+  Chassis.turn_to_angle(90);
+  moveToPosition(100, GPS.yPosition(mm), GPS.heading(),true,100,100);
+  Intake.spin(fwd,-100,pct);
+  moveToPosition(120, GPS.yPosition(mm), GPS.heading(),true,100,100);
+  Chassis.drive_distance(-10);
+  Intake.stop();
+  moveToPosition(85,85,45,true,75,100); 
+  moveToPosition(120,120,45,true,75,100);
+//
+
+//moveToPosition(37,85,270,true,75,50);
+Intake.spin(fwd);
+wait(600,msec);
+Chassis.drive_distance(5);
+Chassis.drive_distance(-7);
+Chassis.drive_distance(5);
+Chassis.drive_distance(-20);
+moveToPosition(120,120,45,true,75,100);
+
+
+  }
+
   void runMatchload (int loads) {
     
     bool Stuck = false;
@@ -382,18 +423,12 @@ namespace matchload {
         matchload::catapultShoot();
         if(abs(GPS.xPosition(mm)) == (120+-5) || abs(GPS.yPosition(mm)) == (120+-5))
         moveToPosition(135,135,45,false,80,70);
-
         // moveToPosition(-135,-135,225,false,80,70); blue
         Chassis.turn_to_angle(45);
         Chassis.drive_distance(5);
         wait(700,msec);
         LeftDriveSmart.spin(fwd,10,percent);
         RightDriveSmart.spin(fwd,10,percent);
-    /*    RightDriveSmart.spinFor(fwd,400,degrees);
-        LeftDriveSmart.spin(fwd,60,percent);
-        RightDriveSmart.spin(fwd,60,percent);
-        wait(150,msec);
-    */
         Times += 1;
       } 
 
@@ -411,7 +446,7 @@ namespace matchload {
   }
 
 
-  void DemoTriball(int Preloads)
+  void ShootingRoutine(int Preloads)
   {
     startSubsystems();
     int Times = 0;
@@ -419,15 +454,10 @@ namespace matchload {
     LeftDriveSmart.setVelocity(100,percent);
     RightDriveSmart.setVelocity(100,percent);
     Intake.spin(fwd,-100,percent);
-  
     ImproSwing(20,-80,700);
     Chassis.drive_distance(-30,65);
-  //Chassis.turn_to_angle(20);
     catapultShoot();
     Chassis.drive_distance(25,45);
-    
-    //turnTo(30,60,1);
-    //Chassis.drive_distance(10);
     LeftDriveSmart.spin(fwd,50,percent);
     RightDriveSmart.spin(fwd,50,percent);
     wait(700,msec);
