@@ -25,7 +25,6 @@
 #include "JAR-Template/util.h"
 #include "JAR-Template/PID.h"
 
-#include "main.h"
 
 #define waitUntil(condition)                                                   \
   do {                                                                         \
@@ -39,3 +38,5 @@ extern ai::jetson      jetson_comms;
 extern ai::robot_link  link;
 
 extern int dashboardTask( void );
+
+extern FILE* fp;

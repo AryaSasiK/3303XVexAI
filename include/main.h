@@ -1,4 +1,4 @@
-extern FILE* fp;
+#include "vex.h"
 
 void endgame();
 

@@ -8,6 +8,8 @@
 /*----------------------------------------------------------------------------*/
 
 #include "ai_functions.h"
+#include "main.h"
+
 using namespace std;
 using namespace vex;
 
@@ -16,6 +18,16 @@ using namespace vex;
 
 // GPS Offsets (15in, 24in)
 // X(0,0), Y(-6.5in,8in), Z(9.875,11in), Heading(180,180)
+
+
+
+// File for fprintf function
+FILE *fp = fopen("/dev/serial2","wb");
+// Standard objects
+brain Brain;
+controller Controller1 = controller(primary);
+competition Competition;
+ai::jetson  jetson_comms;// create instance of jetson class to receive location and other
 
 #define  MANAGER_ROBOT    1
 
@@ -33,14 +45,14 @@ motor rightDriveC = motor(PORT1, ratio6_1, false);
 motor rightDriveD = motor(PORT2, ratio6_1, false);
 motor Catapult = motor(PORT11,ratio36_1,true);
 optical Balldetect = optical(PORT14);
-motor Intake = motor(PORT11, ratio6_1, true);
 gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
 const int32_t InertialPort = PORT18;
 const int32_t HangAPort = PORT14;
 const int32_t HangBPort = PORT13;
+const int32_t IntakePort = PORT12;
 rotation hangEncoder = rotation(PORT5);
 rotation catapultEncoder = rotation(PORT16);
-//limit catapultLimit = limit(Brain.ThreeWirePort.D);
+limit catapultLimit = limit(Brain.ThreeWirePort.D);
 double Robot_x_Offset = 25.4;
 
 #else
@@ -55,7 +67,7 @@ motor rightDriveA = motor(PORT12, ratio6_1, false);
 motor rightDriveB = motor(PORT2, ratio6_1, false);
 motor rightDriveC = motor(PORT7, ratio6_1, true);
 motor rightDriveD = motor(PORT4, ratio6_1, true);
-motor Intake = motor(PORT11, ratio6_1, true);
+const int32_t IntakePort = PORT11;
 gps GPS = gps(PORT3, 0.0, -146, mm, 180);
 const int32_t InertialPort = PORT16;
 const int32_t HangAPort = PORT15;
@@ -69,17 +81,8 @@ double Robot_x_Offset = 1;
 #define RedMinHue
 #define RedMaxHue
 
-
 // Field object for path following
 Field field(vex::color::blue,Robot_x_Offset);
-// File for fprintf function
-FILE *fp = fopen("/dev/serial2","wb");
-// Standard objects
-brain Brain;
-controller Controller1 = controller(primary);
-competition Competition;
-ai::jetson  jetson_comms;// create instance of jetson class to receive location and other
-
 // Universal Objects (Do not comment out)
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
@@ -87,7 +90,7 @@ Drive Chassis(LeftDriveSmart,RightDriveSmart,InertialPort, 3.125, 0.6, 360);
 motor HangA = motor(HangAPort, ratio36_1, false);
 motor HangB = motor(HangBPort, ratio36_1, true);
 motor_group Hang = motor_group(HangA, HangB);
-
+motor Intake = motor(IntakePort, ratio6_1, true);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -198,7 +201,8 @@ void auto_Isolation(void)
 
 void auto_Interaction(void) 
 {
-  matchload::runMatchload(3);
+  matchload::startSubsystems();
+  //matchload::runMatchload(3);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -262,7 +266,7 @@ int main() {
       counter += 1 ;
       if (counter > 15)
       {
-        printPosition(distanceUnits::cm);
+        //printPosition(distanceUnits::cm);
         //testing_tuning();  
         //fprintf(fp,"\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
         //fprintf(fp,"\nGPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
@@ -302,7 +306,7 @@ namespace matchload {
     while (LimitControl == false)
       {
         Catapult.spin(fwd,-(abs(100-(100*atan(0.02*catapultEncoder.angle())))),percent);
-        if(catapultLimit.pressing())
+        if(catapultLimit.pressing() || (catapultEncoder.angle(degrees) > 72 && catapultEncoder.angle(degrees) < 150))
         LimitControl = true;
       }
   }
@@ -323,12 +327,14 @@ namespace matchload {
   {
     Hang.spin(fwd);
     waitUntil(hangEncoder.angle(degrees) >= 50);
+    Intake.setVelocity(100, pct);
     Intake.spin(fwd);
-    Catapult.spinFor(fwd,-100,degrees);
+    //Catapult.spinFor(fwd,-100,degrees);
     setCatapultDown();
     Catapult.stop();
     waitUntil(hangEncoder.angle(degrees) >= 200);
     Hang.stop();
+    Intake.stop();
   }
 
 
