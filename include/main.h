@@ -24,4 +24,6 @@ namespace matchload {
     void ImproSwing(int LVel, int RVel, int Deg);
 
     void DemoTriball(int Preloads);
+
+    void CheckPos (float Degs);
 }

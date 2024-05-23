@@ -45,7 +45,7 @@ motor rightDriveC = motor(PORT1, ratio6_1, false);
 motor rightDriveD = motor(PORT2, ratio6_1, false);
 motor Catapult = motor(PORT11,ratio36_1,true);
 optical Balldetect = optical(PORT6);
-gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
+gps GPS = gps(PORT20, 0.0, -163, mm, 180);
 const int32_t InertialPort = PORT18;
 const int32_t HangAPort = PORT14;
 const int32_t HangBPort = PORT13;
@@ -75,12 +75,7 @@ const int32_t HangBPort = PORT13;
 double Robot_x_Offset = 1;
 
 #endif
-
-#define BlueMinHue 90
-#define BlueMaxHue 120
-#define RedMinHue
-#define RedMaxHue
-#define AtanFunction abs(63*atan(0.07*(76-catapultEncoder.angle(degrees))))
+#define AtanFunction abs(63*atan(0.07*(78-catapultEncoder.angle(degrees))))
 
 
 // Field object for path following
@@ -204,7 +199,7 @@ void auto_Interaction(void)
 {
   matchload::startSubsystems(false);
   matchload::ScoreAllianceTriball();
- // matchload::runMatchload(3);
+  matchload::runMatchload(3);
   //matchload::runMatchload(3);
 }
 
@@ -271,8 +266,8 @@ int main() {
       {
         //printPosition(distanceUnits::cm);
         //testing_tuning();  
-        //fprintf(fp,"\nPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
-        fprintf(fp,"\nGPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
+        fprintf(fp,"\rPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
+        fprintf(fp,"\rGPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
         
         counter = 0 ;
       }
@@ -299,7 +294,7 @@ void printPosition (vex::distanceUnits units = vex::distanceUnits::cm)
 namespace matchload {
 
   
-  
+  float HangTurns = 0;
   bool LimitControl = false;
 
   /**
@@ -312,16 +307,17 @@ namespace matchload {
     {
     while (LimitControl == false)
       {
-        if(catapultEncoder.angle() > 150)
+        if(catapultEncoder.angle() > 250)
         Catapult.spin(fwd,-70,percent);
 
         else
         Catapult.spin(fwd,-(AtanFunction),percent);
         
-        if(catapultLimit.pressing() || (catapultEncoder.angle(degrees) > 72 && catapultEncoder.angle(degrees) < 150))
+        if(catapultLimit.pressing() || (catapultEncoder.angle(degrees) > 70 && catapultEncoder.angle(degrees) < 150))
         LimitControl = true;
 
       }
+      Catapult.stop();
     }
 
     else
@@ -344,13 +340,17 @@ namespace matchload {
   }
 
 
-
+void CheckPos(float Degs)
+{
+  HangTurns = ((Degs-(hangEncoder.angle(degrees)))*14);
+  wait(25,msec);
+}
 
 
   void catapultShoot ()
   {
 
-    Catapult.spinFor(fwd,-100,degrees);
+    Catapult.spinFor(fwd,-250,degrees);
     LimitControl = false;
     setCatapultDown();
   }
@@ -387,6 +387,8 @@ namespace matchload {
 
   void ScoreAllianceTriball()
   {
+    CheckPos(230);
+    Hang.spinFor(fwd,HangTurns,degrees,false);
     Intake.spin(fwd,-100,percent);
     LeftDriveSmart.spin(fwd,50,percent);
     RightDriveSmart.spin(fwd,50,percent);
@@ -396,10 +398,12 @@ namespace matchload {
     bool loseball = false;
     while(!Balldetect.isNearObject())
     {
-      timeout2 =+ 1;
+      timeout2 += 1;
+      wait(25,msec);
       Intake.spin(fwd,-100,percent);
       if (timeout2 > 240)
        loseball = true;
+
       if(loseball == true)
       {
         Chassis.drive_distance(-3);
@@ -412,36 +416,41 @@ namespace matchload {
     Intake.stop();
     //moveToPosition(80,85,270,false,75,80);
     //
-  ImproSwing(-80,-100,3000);
+  //ImproSwing(-80,-100,3000);
 //  ImproSwing(-100,-50,500);
+  moveToPosition(50, 45, -1,true,100,100);
   Chassis.turn_to_angle(90);
- // moveToPosition(15, 30, 90,true,100,100);
-  Chassis.drive_distance(20);
+  Chassis.drive_distance(10);
   Intake.spin(fwd,100,pct);
   wait(200,msec);
   Chassis.drive_distance(5);
   Chassis.drive_distance(-6);
-  Chassis.drive_distance(12);
-  Chassis.drive_distance(-15);
+  Chassis.drive_distance(10);
+  Chassis.drive_distance(-10);
   Intake.stop();
   Chassis.turn_to_angle(0);
-  ImproSwing(100,30,900);
-  moveToPosition(105,105,45,false,70,70);
+  ImproSwing(100,50,1000);
+  moveToPosition(110,115,45,false,100,100);
   Intake.spin(fwd,-100,pct);
 
   }
 
   void runMatchload (int TargetLoads) {
     
+    setCatapultDown();
+    Chassis.drive_distance(6);
+    Intake.spin(fwd,-100,pct);
     bool Stuck = false;
     int Loads = 0;
+    LeftDriveSmart.spin(fwd,70,percent);
+    RightDriveSmart.spin(fwd,70,percent);
+    wait(1,seconds);
 
       while ( Loads <= TargetLoads &&  Stuck == false )
       {
         LeftDriveSmart.stop();
         RightDriveSmart.stop();
         int timeout = 0;
-        LimitControl = false;
         Balldetect.objectDetectThreshold(30);
         //waitUntil(Balldetect.brightness() > 70 && Balldetect.brightness() < 110);
         //while(!(Balldetect.hue() > BlueMinHue && Balldetect. hue() < BlueMaxHue))
@@ -461,18 +470,23 @@ namespace matchload {
 
         Intake.spin(fwd,-100,percent);
         wait(1000,msec);
-        Chassis.right_swing_to_angle(80);
-        matchload::catapultShoot();
-        if(abs(GPS.xPosition(mm)) == (120+-5) || abs(GPS.yPosition(mm)) == (120+-5))
-        moveToPosition(135,135,45,false,80,70);
+        Chassis.right_swing_to_angle(70,12,1,1,0,.25,.015,1.1,15);
+        catapultShoot();
+       
         // moveToPosition(-135,-135,225,false,80,70); blue
         Chassis.turn_to_angle(45);
         Chassis.drive_distance(5);
         wait(700,msec);
+        //if((abs(GPS.xPosition(mm))) < 100 || (abs(GPS.xPosition(mm))) > 150 || (abs(GPS.yPosition(mm))) < 100|| (abs(GPS.yPosition(mm))) > 150);
+        //moveToPosition(130,130,45,false,50,50);
+
         LeftDriveSmart.spin(fwd,10,percent);
         RightDriveSmart.spin(fwd,10,percent);
         Loads += 1;
       } 
+      Intake.stop();
+      LeftDriveSmart.stop();
+      RightDriveSmart.stop();
 
   }
 
