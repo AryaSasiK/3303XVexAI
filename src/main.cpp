@@ -54,6 +54,7 @@ rotation hangEncoder = rotation(PORT5);
 rotation catapultEncoder = rotation(PORT16);
 limit catapultLimit = limit(Brain.ThreeWirePort.D);
 double Robot_x_Offset = 25.4;
+double Intake_Offset = 0;
 
 #else
 #pragma message("building for the worker")
@@ -79,7 +80,8 @@ double Robot_x_Offset = 1;
 
 
 // Field object for path following
-Field field(vex::color::blue,Robot_x_Offset);
+Field field(true,Robot_x_Offset,Intake_Offset);
+//FILE *fp = fopen("/dev/serial2","wb");
 // Universal Objects (Do not comment out)
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
@@ -157,7 +159,7 @@ void testing_tuning(void)
 {
    while(true)
   {
-    if(getObject())
+    if(getObject(1,1))
     {
       ScoreBall();
       wait(2, sec);
@@ -237,7 +239,7 @@ void autonomousMain(void)
 void endgame () {
   
   Point goalAlignPos = Point(65.00, 0);
-  moveToPoint(&goalAlignPos, true);
+  moveToPoint(&goalAlignPos);
   
 }
 
@@ -417,9 +419,15 @@ void CheckPos(float Degs)
     Intake.stop();
     //moveToPosition(80,85,270,false,75,80);
     //
-  //ImproSwing(-80,-100,3000);
+
+
+
+
+
+    
+  ImproSwing(-80,-100,2000);
 //  ImproSwing(-100,-50,500);
-  moveToPosition(50, 45, -1,true,100,100);
+  moveToPosition(45, 45, 90,false,100,100);
   Chassis.turn_to_angle(90);
   Chassis.drive_distance(10);
   Intake.spin(fwd,100,pct);
@@ -427,10 +435,10 @@ void CheckPos(float Degs)
   Chassis.drive_distance(12);
   Chassis.drive_distance(-6);
   Chassis.drive_distance(5);
-  Chassis.drive_distance(-5);
+  Chassis.drive_distance(-7);
   Intake.stop();
   Chassis.turn_to_angle(0);
-  ImproSwing(100,60,1500);
+  ImproSwing(100,60,1700);
   moveToPosition(120,120,45,false,100,100);
   Intake.spin(fwd,-100,pct);
 
@@ -439,7 +447,6 @@ void CheckPos(float Degs)
   void runMatchload (int TargetLoads) {
     
     setCatapultDown();
-    Chassis.drive_distance(6);
     Intake.spin(fwd,-100,pct);
     bool Stuck = false;
     int Loads = 0;

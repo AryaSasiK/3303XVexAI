@@ -14,12 +14,14 @@
 extern Field field;
 // Calculates the distance to a given target (x, y)
 float distanceTo(double target_x, double target_y,vex::distanceUnits unit);
-
-void moveToPoint(Point* Target, bool frontfacing);
+double calculateBearing(double currX, double currY, double targetX, double targetY);
+void moveToPoint(Point* Target);
+void MovetoBall(Point* Target);
 // Moves the robot to a specified position and orientation
 void moveToPosition(double target_x, double target_y, double target_theta, bool frontfacing, int Dspeed, int Tspeed);
 // Finds a target object based on the specified type
-DETECTION_OBJECT findTarget();
+DETECTION_OBJECT findTarget(bool CheckSide, bool CheckIso);
+bool CheckBallColor();
 // Retrieves an object (e.g. from the ground or a dispenser)
-bool getObject();
+bool getObject(bool CheckSide, bool CheckIso);
 void ScoreBall();

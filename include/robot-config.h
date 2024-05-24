@@ -11,4 +11,4 @@ extern controller Controller;
 extern rotation hangEncoder;
 extern rotation catapultEncoder;
 extern limit catapultLimit;
-
+extern FILE* fp;
