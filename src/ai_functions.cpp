@@ -257,7 +257,7 @@ bool getObject(bool CheckSide = true, bool CheckIso = false)
         {
             fprintf(fp,"\rFound Triball! || Triballl Location (%.2f, %.2f)\n", target.mapLocation.x, target.mapLocation.y);
             fprintf(fp,"\rProbability of this target being a Triball is %.2f \n", target.probability);
-            Intake.spin(vex::directionType::fwd);
+            Intake.spin(vex::directionType::rev);
             moveToPosition(target.mapLocation.x * 100, target.mapLocation.y * 100,-1,true,75,75);
             vex::wait(1.5,msec);
         }
@@ -308,7 +308,7 @@ void ScoreBall()
     
     fprintf(fp,"\rGoing to scoring point (%.2f, %.2f)\n",Scoring_Point->Xcord, Scoring_Point->Ycord);
     moveToPosition(Scoring_Point->Xcord,Scoring_Point->Ycord,Scoring_Dir);
-    Intake.spin(vex::directionType::rev);
+    Intake.spin(vex::directionType::fwd);
     vex::wait(500,msec);
 
     while(HoldingBall)

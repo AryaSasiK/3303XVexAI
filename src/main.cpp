@@ -53,8 +53,11 @@ const int32_t IntakePort = PORT12;
 rotation hangEncoder = rotation(PORT5);
 rotation catapultEncoder = rotation(PORT16);
 limit catapultLimit = limit(Brain.ThreeWirePort.D);
-double Robot_x_Offset = 25.4;
-double Intake_Offset = 0;
+digital_out rightWings = digital_out(Brain.ThreeWirePort.C);
+digital_out leftWings = digital_out(Brain.ThreeWirePort.E);
+digital_out ratchet = digital_out(Brain.ThreeWirePort.H);
+double Robot_x_Offset = 9.5;
+double Intake_Offset = 11;
 
 #else
 #pragma message("building for the worker")
@@ -77,7 +80,11 @@ double Robot_x_Offset = 1;
 
 #endif
 #define AtanFunction abs(63*atan(0.07*(78-catapultEncoder.angle(degrees))))
-
+#define IsoTimeEnd 84
+#define InterTimeEnd 140
+bool isoStart = false;
+float generalTimer = 0 ;
+  
 
 // Field object for path following
 Field field(true,Robot_x_Offset,Intake_Offset);
@@ -91,6 +98,7 @@ motor HangB = motor(HangBPort, ratio36_1, true);
 motor_group Hang = motor_group(HangA, HangB);
 motor Intake = motor(IntakePort, ratio6_1, true);
 
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void tuned_constants()
@@ -101,7 +109,7 @@ void tuned_constants()
   Chassis.set_swing_constants(12, .25, .015, 1.1, 15);//Tuned
   Chassis.set_drive_exit_conditions(1.5, 300, 2000);
   Chassis.set_turn_exit_conditions(1, 300, 2000);
-  Chassis.set_swing_exit_conditions(1, 300, 2000);
+  Chassis.set_swing_exit_conditions(1, 300, 1000);
 }
 
 void pre_auton(void) 
@@ -199,10 +207,17 @@ void auto_Isolation(void)
 
 void auto_Interaction(void) 
 {
- matchload::startSubsystems(false);
- matchload::ScoreAllianceTriball();
- matchload::runMatchload(3);
+
+  //getObject(true,false);
+  isoStart = true;
+//matchload::startSubsystems(false);
+//matchload::ScoreAllianceTriball();
+//matchload::runMatchload(10);
+  
   matchload::Hanging();
+
+fprintf(fp,"\rTotal time: %.1f seconds\n" , ((generalTimer)*0.53));
+
   //matchload::runMatchload(3);
 }
 
@@ -258,20 +273,26 @@ int main() {
   // Competition.autonomous(autonomousMain);
   this_thread::sleep_for(loop_time);
   int counter = 0 ;
+  
   while(1) 
   {
 
       jetson_comms.get_data( &local_map ); // get last map data
       link.set_remote_location( local_map.pos.x, local_map.pos.y, local_map.pos.az, local_map.pos.status );// set our location to be sent to partner robot
-
       counter += 1 ;
+
+
       if (counter > 15)
       {
         //printPosition(distanceUnits::cm);
         //testing_tuning();  
         fprintf(fp,"\rPositional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
         fprintf(fp,"\rGPS Positional Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
+        //fprintf(fp,"\rTimer is: %.1f\n" , generalTimer);
         
+        if(isoStart == true)
+          generalTimer += 1 ;
+
         counter = 0 ;
       }
       // request new data    
@@ -343,7 +364,7 @@ namespace matchload {
   }
 
 
-void CheckPos(float Degs)
+void checkPosition(float Degs)
 {
   HangTurns = ((Degs-(hangEncoder.angle(degrees)))*14);
   wait(25,msec);
@@ -390,7 +411,7 @@ void CheckPos(float Degs)
 
   void ScoreAllianceTriball()
   {
-    CheckPos(230);
+    checkPosition(230);
     Hang.spinFor(fwd,HangTurns,degrees,false);
     Intake.spin(fwd,-100,percent);
     LeftDriveSmart.spin(fwd,50,percent);
@@ -404,13 +425,13 @@ void CheckPos(float Degs)
       timeout2 += 1;
       wait(25,msec);
       Intake.spin(fwd,-100,percent);
-      if (timeout2 > 240)
+      if (timeout2 > 200)
        loseball = true;
 
       if(loseball == true)
       {
-        Chassis.drive_distance(-3);
-        Chassis.drive_distance(3);
+        Chassis.drive_distance(-5);
+        Chassis.drive_distance(5);
         timeout2 = 0;
         loseball = false;
       }
@@ -421,9 +442,19 @@ void CheckPos(float Degs)
     //
 
 
+//Chassis.drive_distance(-3);
+Chassis.right_swing_to_angle(90);
+Chassis.left_swing_to_angle(175);
+//moveToPosition(140,120,170,true,100,100);
+Intake.spin(fwd);
+wait(700,msec);
+Chassis.drive_distance(10);
+Chassis.drive_distance(-10);
+Chassis.drive_distance(10);
+ImproSwing(-100,-20,1500);
+moveToPosition(120,120,45,false,100,100);
 
-
-
+/*
     
   ImproSwing(-80,-100,2000);
 //  ImproSwing(-100,-50,500);
@@ -441,6 +472,7 @@ void CheckPos(float Degs)
   ImproSwing(100,60,1700);
   moveToPosition(120,120,45,false,100,100);
   Intake.spin(fwd,-100,pct);
+*/
 
   }
 
@@ -449,12 +481,12 @@ void CheckPos(float Degs)
     setCatapultDown();
     Intake.spin(fwd,-100,pct);
     bool Stuck = false;
-    int Loads = 0;
-    LeftDriveSmart.spin(fwd,70,percent);
-    RightDriveSmart.spin(fwd,70,percent);
-    wait(1,seconds);
+    float Loads = 0;
+    LeftDriveSmart.spin(fwd,40,percent);
+    RightDriveSmart.spin(fwd,40,percent);
+    wait(400,msec);
 
-      while ( Loads <= TargetLoads &&  Stuck == false )
+      while ( Loads < TargetLoads)
       {
 
         int timeout = 0;
@@ -466,14 +498,21 @@ void CheckPos(float Degs)
           Intake.spin(fwd,-100,percent);
           timeout += 1;
           wait(25,msec);
-          if(timeout > 240)
+          if(timeout > 200)
           {
             Stuck = true;
             break;
           }
         }
         if(Stuck == true)
-          break;
+          {
+            Intake.spin(fwd);
+            Chassis.drive_distance(-15);
+            Intake.spin(fwd,-100,pct);
+            findTarget(true,false);
+            getObject(true,false);
+            Stuck = false;
+          }
 
         LeftDriveSmart.stop();
         RightDriveSmart.stop();
@@ -482,17 +521,19 @@ void CheckPos(float Degs)
         wait(1000,msec);
         Chassis.right_swing_to_angle(70,12,1,1,0,.25,.015,1.1,15);
         catapultShoot();
-       
+             if(Loads == TargetLoads)
+             break;
         // moveToPosition(-135,-135,225,false,80,70); blue
         Chassis.turn_to_angle(45);
-        Chassis.drive_distance(5);
-        wait(700,msec);
+        //Chassis.drive_distance(5);
+        //wait(700,msec);
         //if((abs(GPS.xPosition(mm))) < 100 || (abs(GPS.xPosition(mm))) > 150 || (abs(GPS.yPosition(mm))) < 100|| (abs(GPS.yPosition(mm))) > 150);
         //moveToPosition(130,130,45,false,50,50);
 
         LeftDriveSmart.spin(fwd,10,percent);
         RightDriveSmart.spin(fwd,10,percent);
         Loads += 1;
+        fprintf(fp,"Lanched: %.1f", Loads);
       } 
       Intake.stop();
       LeftDriveSmart.stop();
@@ -500,6 +541,8 @@ void CheckPos(float Degs)
 
   }
 
+
+  
 
   void ImproSwing(int LVel, int RVel, int Deg)
   {
@@ -519,17 +562,19 @@ void CheckPos(float Degs)
   {
   //leftWings.set(false);
   //rightWings.set(false);
-  //ratchet.set(false);
-  CheckPos(HangPos);
-  Hang.spinFor(fwd,HangTurns,degrees);
-  moveToPosition(95,135,90,false,100,100);
+  moveToPosition(100,130,90,false,100,100);
+  ratchet.set(false);
+  checkPosition(HangPos);
+  Hang.spinFor(fwd,HangTurns,degrees,false);
+
     //ImproSwing(-20,-100,750);
-  Chassis.drive_distance(-37);
+  Chassis.drive_distance(-17);
+  waitUntil(hangEncoder.angle(degrees) > HangPos-5 && hangEncoder.angle(degrees) < HangPos+5);
   Chassis.drive_with_voltage(-12,-12);
-  CheckPos(190);
+  checkPosition(200);
   Hang.spinFor(fwd,HangTurns,degrees);
-  //ratchet.set(true);
-  CheckPos(20);
+  ratchet.set(true);
+  checkPosition(20);
   Hang.spinFor(fwd,HangTurns,degrees);
   
   Chassis.drive_with_voltage(0,0);
