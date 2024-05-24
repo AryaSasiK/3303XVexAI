@@ -26,4 +26,6 @@ namespace matchload {
     void DemoTriball(int Preloads);
 
     void CheckPos (float Degs);
+
+    void Hanging ();
 }

@@ -197,9 +197,10 @@ void auto_Isolation(void)
 
 void auto_Interaction(void) 
 {
-  matchload::startSubsystems(false);
-  matchload::ScoreAllianceTriball();
-  matchload::runMatchload(3);
+ matchload::startSubsystems(false);
+ matchload::ScoreAllianceTriball();
+ matchload::runMatchload(3);
+  matchload::Hanging();
   //matchload::runMatchload(3);
 }
 
@@ -293,7 +294,7 @@ void printPosition (vex::distanceUnits units = vex::distanceUnits::cm)
 
 namespace matchload {
 
-  
+  #define HangPos 125
   float HangTurns = 0;
   bool LimitControl = false;
 
@@ -422,15 +423,15 @@ void CheckPos(float Degs)
   Chassis.turn_to_angle(90);
   Chassis.drive_distance(10);
   Intake.spin(fwd,100,pct);
-  wait(200,msec);
-  Chassis.drive_distance(5);
+  wait(500,msec);
+  Chassis.drive_distance(12);
   Chassis.drive_distance(-6);
-  Chassis.drive_distance(10);
-  Chassis.drive_distance(-10);
+  Chassis.drive_distance(5);
+  Chassis.drive_distance(-5);
   Intake.stop();
   Chassis.turn_to_angle(0);
-  ImproSwing(100,50,1000);
-  moveToPosition(110,115,45,false,100,100);
+  ImproSwing(100,60,1500);
+  moveToPosition(120,120,45,false,100,100);
   Intake.spin(fwd,-100,pct);
 
   }
@@ -448,8 +449,7 @@ void CheckPos(float Degs)
 
       while ( Loads <= TargetLoads &&  Stuck == false )
       {
-        LeftDriveSmart.stop();
-        RightDriveSmart.stop();
+
         int timeout = 0;
         Balldetect.objectDetectThreshold(30);
         //waitUntil(Balldetect.brightness() > 70 && Balldetect.brightness() < 110);
@@ -467,6 +467,9 @@ void CheckPos(float Degs)
         }
         if(Stuck == true)
           break;
+
+        LeftDriveSmart.stop();
+        RightDriveSmart.stop();
 
         Intake.spin(fwd,-100,percent);
         wait(1000,msec);
@@ -504,15 +507,42 @@ void CheckPos(float Degs)
   }
 
 
+
+  void Hanging()
+  {
+  //leftWings.set(false);
+  //rightWings.set(false);
+  //ratchet.set(false);
+  CheckPos(HangPos);
+  Hang.spinFor(fwd,HangTurns,degrees);
+  moveToPosition(95,135,90,false,100,100);
+    //ImproSwing(-20,-100,750);
+  Chassis.drive_distance(-37);
+  Chassis.drive_with_voltage(-12,-12);
+  CheckPos(190);
+  Hang.spinFor(fwd,HangTurns,degrees);
+  //ratchet.set(true);
+  CheckPos(20);
+  Hang.spinFor(fwd,HangTurns,degrees);
+  
+  Chassis.drive_with_voltage(0,0);
+
+}
+
+
+
   void ShootingRoutine(int TargetLoads)
   {
     startSubsystems();
     ScoreAllianceTriball();
-    Intake.spin(fwd,-100,percent);
-    Chassis.drive_distance(15);
-    runMatchload(TargetLoads);
-    Intake.stop();
+    runMatchload(20);
     
+  }
+  
+  void ShootingRoutineInteraction(int TargetLoads)
+  {
+    runMatchload(11);
+    Hanging();
   }
 
 }
