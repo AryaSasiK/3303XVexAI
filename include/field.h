@@ -74,6 +74,12 @@ class Field
     vector<const Point*> Offensive_Zone;
     vector<const Point*> Scoring_Zone;
     vector<const Point*> Front_Scoring_Zone;
+    vector<const Point*> Intake_Zone;
+    Point* Calc_Offest_Point();
+    pair<Point*, double> Dist_from_Node(int NodePos, Point* freePoint);
+    Line FindOffsetLines(Point*P1, Point* P2, bool offsettype);
+    int getIndex(Point* AdjPoint);
+    Point* Find_Point_on_Path(Point* freePoint);
    
     
 public:
@@ -87,17 +93,16 @@ public:
 
     Field(bool isRed, double Robot_Width, double Intake_Offset);
     Point* Find_Scoring_Pos();
-    Point* Find_Point_on_Path(Point* freePoint);
     bool Check_Barrier_Intersects(Point* point, Point* inPath, bool checkoffsets);
     bool In_Goal_Zone(float Ball_x, float Ball_y);
     bool In_MatchLoad_Zone(float Ball_x, float Ball_y);
     bool In_Iso_Zone(float Ball_x, float Ball_y, bool check);
     bool In_Offensive_Zone(float Ball_x, float Ball_y, bool check);
     bool In_Front_Score_Zone();
-    pair<Point*, double> Dist_from_Node(int NodePos, Point* freePoint);
+    bool Near_Intake_Zone(float Ball_x, float Ball_y);
     Path Create_Path_to_Target(Point* Current, Point* Target);
-    int getIndex(Point* AdjPoint);
-    Line FindOffsetLines(Point*P1, Point* P2, bool offsettype);
+    
+ 
     
 };
 

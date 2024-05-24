@@ -10,3 +10,10 @@ extern optical Balldetect;
 extern controller Controller;
 extern FILE* fp;
 
+
+#define  MANAGER_ROBOT    1
+
+#if defined(MANAGER_ROBOT)
+    extern motor Catapult;
+#endif
+

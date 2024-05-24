@@ -16,8 +16,11 @@ using namespace vex;
 
 // GPS Offsets (15in, 24in)
 // X(0,0), Y(-6.5in,8in), Z(9.875,11in), Heading(180,180)
-
-//#define  MANAGER_ROBOT    1
+/////********************************************************/////
+#define  MANAGER_ROBOT    1
+/////*********STOP*************STOP*************STOP*********/////
+/////**DONT FORGET TO DEFINE OR COMMENT IN "robot-config.h"**/////
+/////********************************************************/////
 
 #if defined(MANAGER_ROBOT)
 #pragma message("building for the manager")
@@ -59,19 +62,22 @@ motor HangA = motor(PORT15, ratio36_1, false);
 motor HangB = motor(PORT13, ratio36_1, true);
 gps GPS = gps(PORT3, 0.0, -146, mm, 180);
 const int32_t InertialPort = PORT16;
-double Robot_x_Offset = 22.0;
-double Intake_Offset = 9.0;
+double Robot_x_Offset = 20;
+double Intake_Offset = 8.0;
 #endif
 
-// Red Side = true || Blue Side = false
-Field field(true,Robot_x_Offset,Intake_Offset);
-FILE *fp = fopen("/dev/serial2","wb");
-brain Brain;
+
 controller Controller1 = controller(primary);
+
 competition Competition;
 ai::jetson  jetson_comms;// create instance of jetson class to receive location and other
 
 //Universal Objects (Do not comment out)
+// Red Side = true || Blue Side = false
+Field field(false,Robot_x_Offset,Intake_Offset);
+FILE *fp = fopen("/dev/serial2","wb");
+brain Brain;
+timer Match = timer();
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
 Drive Chassis(LeftDriveSmart,RightDriveSmart,InertialPort, 3.125, 0.6, 360);
@@ -93,6 +99,8 @@ void tuned_constants()
 
 void pre_auton(void) 
 {
+  Balldetect.objectDetectThreshold(65);
+  Intake.setVelocity(100,pct);
   tuned_constants();
   Chassis.Gyro.calibrate();
   while (Chassis.Gyro.isCalibrating()) 
@@ -139,10 +147,10 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
-  //wait(5,sec);
+  // moveToPosition(-50,16.68125,-1,false,75,75);
   while(true)
   {
-    if(getObject(true,true))
+    if(getObject(true,false))
     {
       wait(500,msec);
       ScoreBall();
