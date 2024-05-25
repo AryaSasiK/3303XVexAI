@@ -46,7 +46,7 @@ motor rightDriveD = motor(PORT2, ratio6_1, false);
 motor Catapult = motor(PORT11,ratio36_1,true);
 optical Balldetect = optical(PORT6);
 gps GPS = gps(PORT20, 0.0, -163, mm, 180);
-const int32_t InertialPort = PORT18;
+const int32_t InertialPort = PORT19;
 const int32_t HangAPort = PORT14;
 const int32_t HangBPort = PORT13;
 const int32_t IntakePort = PORT12;
@@ -57,7 +57,7 @@ digital_out rightWings = digital_out(Brain.ThreeWirePort.C);
 digital_out leftWings = digital_out(Brain.ThreeWirePort.E);
 digital_out ratchet = digital_out(Brain.ThreeWirePort.H);
 double Robot_x_Offset = 9.5;
-double Intake_Offset = 11;
+double Intake_Offset = 9;
 
 #else
 #pragma message("building for the worker")
@@ -92,7 +92,7 @@ Field field(true,Robot_x_Offset,Intake_Offset);
 // Universal Objects (Do not comment out)
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
-Drive Chassis(LeftDriveSmart,RightDriveSmart,InertialPort, 3.125, 0.6, 360);
+Drive Chassis(LeftDriveSmart,RightDriveSmart,InertialPort, 3.15, 0.6, 360);
 motor HangA = motor(HangAPort, ratio36_1, false);
 motor HangB = motor(HangBPort, ratio36_1, true);
 motor_group Hang = motor_group(HangA, HangB);
@@ -103,13 +103,23 @@ motor Intake = motor(IntakePort, ratio6_1, true);
 
 void tuned_constants()
 {
-  Chassis.set_drive_constants(12, 1.5, 0, 10, 0);//Not tuned, but working
+  // Chassis.set_drive_constants(12, 1.5, 0, 10, 0);//Not tuned, but working
+  // Chassis.set_heading_constants(6, .4, 0, 1, 0);
+  Chassis.set_turn_constants(12, 0.18, 0.018, 1.25, 15);//Tuned
+  // Chassis.set_swing_constants(12, .25, .015, 1.1, 15);//Tuned
+  // Chassis.set_drive_exit_conditions(1.5, 300, 2000);
+  // Chassis.set_turn_exit_conditions(1, 300, 2000);
+  // Chassis.set_swing_exit_conditions(1, 300, 1000);
+  Chassis.set_drive_constants(12, 1.4, 0, 16, 0);
   Chassis.set_heading_constants(6, .4, 0, 1, 0);
-  Chassis.set_turn_constants(12, 0.25, 0.015, 1.1, 15);//Tuned
-  Chassis.set_swing_constants(12, .25, .015, 1.1, 15);//Tuned
-  Chassis.set_drive_exit_conditions(1.5, 300, 2000);
-  Chassis.set_turn_exit_conditions(1, 300, 2000);
-  Chassis.set_swing_exit_conditions(1, 300, 1000);
+  // Chassis.set_turn_constants(12, 0.25, 0.0005, 1.25, 15);//Tuned
+    // Chassis.set_turn_constants(12, 0.05, 0, 0, 0);//Tuned
+
+  Chassis.set_swing_constants(12, .3, .001, 2, 15);
+  Chassis.set_drive_exit_conditions(1.5, 300, 5000);
+  Chassis.set_turn_exit_conditions(1, 300, 3000);
+  Chassis.set_swing_exit_conditions(1, 300, 3000);
+  
 }
 
 void pre_auton(void) 
@@ -167,10 +177,8 @@ void testing_tuning(void)
 {
    while(true)
   {
-    if(getObject(1,1))
+    if(getObject(false,false))
     {
-      ScoreBall();
-      wait(2, sec);
     }
   }
 }
@@ -178,7 +186,11 @@ void testing_tuning(void)
 
 void pidTuning()
 {
-  Chassis.turn_to_angle(90);
+  // Chassis.drive_distance(
+  //   48
+  // );
+  Chassis.set_heading(0);
+  Chassis.turn_to_angle(180);
 }
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -208,15 +220,15 @@ void auto_Isolation(void)
 void auto_Interaction(void) 
 {
 
-  //getObject(true,false);
-  isoStart = true;
+  //getObject(false,false);
+  //isoStart = true;
 //matchload::startSubsystems(false);
 //matchload::ScoreAllianceTriball();
 //matchload::runMatchload(10);
   
-  matchload::Hanging();
+  //matchload::Hanging();
 
-fprintf(fp,"\rTotal time: %.1f seconds\n" , ((generalTimer)*0.53));
+//fprintf(fp,"\rTotal time: %.1f seconds\n" , ((generalTimer)*0.53));
 
   //matchload::runMatchload(3);
 }
@@ -269,7 +281,7 @@ int main() {
   pre_auton(); 
   // Set up callbacks for autonomous and driver control periods.
   Competition.drivercontrol(usercontrol);
-  Competition.autonomous(auto_Interaction);
+  Competition.autonomous(pidTuning);
   // Competition.autonomous(autonomousMain);
   this_thread::sleep_for(loop_time);
   int counter = 0 ;
@@ -562,7 +574,8 @@ moveToPosition(120,120,45,false,100,100);
   {
   //leftWings.set(false);
   //rightWings.set(false);
-  moveToPosition(100,130,90,false,100,100);
+  
+  moveToPosition(115,130,90,false,100,100);
   ratchet.set(false);
   checkPosition(HangPos);
   Hang.spinFor(fwd,HangTurns,degrees,false);

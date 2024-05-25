@@ -76,7 +76,7 @@ static Point
     L_Red_Score(Side_Score_X,Side_Score_Y),
     R_Red_Score(Side_Score_X,-Side_Score_Y),
     L_Blue_Score(-Side_Score_X,-Side_Score_Y),
-    R_Blue_Score(Side_Score_X,Side_Score_Y);
+    R_Blue_Score(-Side_Score_X,Side_Score_Y);
 static Line
     Red_Score(Red_ScoreA,Red_ScoreB),
     Blue_Score(Blue_ScoreA,Blue_ScoreB);
@@ -92,8 +92,12 @@ static Point
 static Point 
     Front_Red_1(Scoring_Zone_X,CenterBar_Y),
     Front_Red_2(Scoring_Zone_X,-CenterBar_Y),
+   
+    
     Front_Blue_1(-Scoring_Zone_X,CenterBar_Y),
-    Front_Blue_2(-Scoring_Zone_X,-CenterBar_Y);
+    Front_Blue_2(-Scoring_Zone_X,-CenterBar_Y),
+    Back_RB_1(0.00, CenterBar_Y),
+    Back_RB_2(0.00, -CenterBar_Y);
 //Field Barriers
 static Barrier
     RedGoal(Red_Front_Side, Red_Left_Side, Red_Right_Side),
@@ -163,16 +167,16 @@ Field::Field(bool isRed, double Robot_Width, double Intake_Offset)
         Offensive_Zone.push_back(&Q2_Field_Corner);
         Offensive_Zone.push_back(&Q1_Field_Corner);
 
-        Scoring_Zone.push_back(&Center_Bar1);
         Scoring_Zone.push_back(&Front_Red_1);
         Scoring_Zone.push_back(&Front_Red_2);
-        Scoring_Zone.push_back(&Center_Bar2);
+        Scoring_Zone.push_back(&Back_RB_2);
+        Scoring_Zone.push_back(&Back_RB_1);
 
         Score_Front = &Red_Score;
         Score_Left.first = &L_Red_Score;
         Score_Left.second = 180.0;
         Score_Right.first = &R_Red_Score;
-        Score_Left.second = 0.0;
+        Score_Right.second = 0.0;
     }
     else 
     {
@@ -189,16 +193,16 @@ Field::Field(bool isRed, double Robot_Width, double Intake_Offset)
         Offensive_Zone.push_back(&Q3_Field_Corner);
         Offensive_Zone.push_back(&Q4_Field_Corner);
 
-        Scoring_Zone.push_back(&Center_Bar1);
         Scoring_Zone.push_back(&Front_Blue_1);
         Scoring_Zone.push_back(&Front_Blue_2);
-        Scoring_Zone.push_back(&Center_Bar2);
+        Scoring_Zone.push_back(&Back_RB_2);
+        Scoring_Zone.push_back(&Back_RB_1);
         
         Score_Front = &Blue_Score;
         Score_Left.first = &L_Blue_Score;
-        Score_Left.second = 0.0;
+        Score_Left.second = 0.00;
         Score_Right.first = &R_Blue_Score;
-        Score_Left.second = 180.0;
+        Score_Right.second = 180.0;
     }
 
     Width_Offset = Robot_Width;
@@ -267,7 +271,19 @@ Point* Field::Find_Scoring_Pos()
 
     return PoL;
 }
+Point* Field::Calc_Offest_Point()
+{
+    double 
+    X_pos = GPS.xPosition(vex::distanceUnits::cm),
+    Y_pos = GPS.yPosition(vex::distanceUnits::cm),
+    theta = GPS.heading(vex::rotationUnits::deg);
 
+    double dX = cos(theta) * Front_Offset;
+    double dY = sin(theta) * Front_Offset;
+
+    return new Point(X_pos+dX,Y_pos+dY);
+
+}
 
 int orientation(Point* p, Point* q, Point* r)
 {
@@ -409,8 +425,9 @@ bool Field::In_Offensive_Zone(float Ball_x, float Ball_y, bool check)
 }
 bool Field::In_Front_Score_Zone()
 {   
-    return Inside_Polygon(GPS.xPosition(vex::distanceUnits::cm)/100, GPS.yPosition(vex::distanceUnits::cm)/100,Scoring_Zone);
+    return Inside_Polygon((GPS.xPosition(vex::distanceUnits::cm )/100), (GPS.yPosition(vex::distanceUnits::cm)/100),Scoring_Zone);
 }
+
 
 bool Field::In_Iso_Zone(float Ball_x, float Ball_y, bool check)
 {
@@ -419,6 +436,27 @@ bool Field::In_Iso_Zone(float Ball_x, float Ball_y, bool check)
     else
         check = true;
     return check;
+}
+
+bool Field::Near_Intake_Zone(float Ball_x, float Ball_y)
+{
+    Point Current(GPS.xPosition(vex::distanceUnits::cm), GPS.yPosition(vex::distanceUnits::cm));
+    Point* Intake_Off = Calc_Offest_Point();
+
+    Line Intake_OffsetA = FindOffsetLines(&Current, Intake_Off,true);
+    Line Intake_OffsetB = FindOffsetLines(&Current, Intake_Off,true);
+    Point A1 = Intake_OffsetA.LinePoints.first;
+    Point A2 = Intake_OffsetA.LinePoints.second;
+    Point B1 = Intake_OffsetA.LinePoints.first;
+    Point B2 = Intake_OffsetA.LinePoints.second;
+    Intake_Zone.clear();
+    Intake_Zone.push_back(&A1);
+    Intake_Zone.push_back(&A2);
+    Intake_Zone.push_back(&B1);
+    Intake_Zone.push_back(&B2);
+    
+
+    return Inside_Polygon(Ball_x, Ball_y,Intake_Zone);
 }
 
 bool pairCompare(const std::pair<Point*, double> &firstElem, const std::pair<Point*, double> &secondElem)
