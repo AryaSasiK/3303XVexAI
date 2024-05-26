@@ -90,7 +90,7 @@ void moveToPoint(Point* Target)
         double diff = fabs(GPS.heading(vex::rotationUnits::deg) - intialHeading);
         double result = (diff <= 180.0) ? diff : 360.0 - diff;
 
-        if(result >= 180)
+        if(result > 90)
         {
             intialHeading +=  180;
         }
@@ -99,7 +99,7 @@ void moveToPoint(Point* Target)
         //Drive Function
         Chassis.desired_heading = intialHeading;
         float distance = distanceTo(Target->Xcord, Target->Ycord);
-        if(result >= 180)
+        if(result > 90)
         {
             distance = distance * -1;
         }
@@ -153,18 +153,18 @@ void moveToPosition(double target_x, double target_y, double target_theta = -1, 
             fprintf(fp, "\r-> (%.2f, %.2f)\n", Path2Follow.PathPoints[i]->Xcord, Path2Follow.PathPoints[i]->Xcord);
             if(!GetBall)
             {
-                moveToPoint(Path2Follow.PathPoints[i]);
+                //moveToPoint(Path2Follow.PathPoints[i]);
             }
 
             else
             {
                 if(i == Path2Follow.PathPoints.size() - 1)
                 {
-                    MovetoBall(Path2Follow.PathPoints[i]);
+                    //MovetoBall(Path2Follow.PathPoints[i]);
                 }
                 else
                 {
-                    moveToPoint(Path2Follow.PathPoints[i]);
+                    //moveToPoint(Path2Follow.PathPoints[i]);
                 }
             }
         }
@@ -188,6 +188,7 @@ DETECTION_OBJECT findTarget(bool CheckSide = true, bool CheckIso = false)
         Ball_Color = 2;
     else if (field.Red_Side)
         Ball_Color = 1;
+    field.Updtae_Intake_Zone();
    
     fprintf(fp,"\rNumber of balls in local map: %ld \n",local_map.detectionCount);
     for (int i = 0; i < local_map.detectionCount; i++)
@@ -200,14 +201,21 @@ DETECTION_OBJECT findTarget(bool CheckSide = true, bool CheckIso = false)
                 {
                     if(local_map.detections[i].classID == 0 || Ball_Color )
                     {
-                        if(local_map.detections[i].probability > 0.97 && local_map.detections[i].probability <= 1) 
+                        if(!field.Near_Intake(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
                         {
-                            double Ball_Dist = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
-                            if (Ball_Dist < lowestDist)
+                            if(local_map.detections[i].probability > 0.97 && local_map.detections[i].probability <= 1) 
                             {
-                                target = local_map.detections[i];
-                                lowestDist = Ball_Dist; 
-                                fprintf(fp,"Found Viable target @ (%.2f, %.2f)\n", target.mapLocation.x, target.mapLocation.y);
+                                double Ball_Dist = distanceTo(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y);
+                                if (Ball_Dist < lowestDist)
+                                {
+                                    target = local_map.detections[i];
+                                    lowestDist = Ball_Dist; 
+                                    fprintf(fp,"\rFound Viable target at (%.2f, %.2f)\n", target.mapLocation.x, target.mapLocation.y);
+                                }
+                                else 
+                                {
+                                    fprintf(fp,"\rNo Viable target Found\n");
+                                }
                             }
                         }
                     }
@@ -242,17 +250,17 @@ bool CheckBallColor()
 bool getObject(bool CheckSide = true, bool CheckIso = false)
 {
     bool HoldingBall = false; 
-    float turn_step = 45;
+    int turn_step = 45;
     
     while(!HoldingBall)
-    {
+    {    DETECTION_OBJECT target = findTarget(CheckSide,CheckIso);
         if(Balldetect.isNearObject() && CheckBallColor())
         {
             fprintf(fp,"\rThe robot is holding a Triball\n");
             Intake.stop(hold);
             HoldingBall = true;
         } 
-        DETECTION_OBJECT target = findTarget(CheckSide,CheckIso);
+       
         if(target.mapLocation.x && target.mapLocation.y != 0.00)
         {
             fprintf(fp,"\rFound Triball! || Triballl Location (%.2f, %.2f)\n", target.mapLocation.x, target.mapLocation.y);
@@ -264,11 +272,11 @@ bool getObject(bool CheckSide = true, bool CheckIso = false)
         else
         {
             //fprintf(fp,"\rSeanning for ball....\n");
-            Chassis.turn_max_voltage = 12;
-            //fprintf(fp,"\rAngle to turn to %.2f Degrees\n",GPS.heading(deg) + turn_step);
+            Chassis.turn_max_voltage = 3;
+            fprintf(fp,"\rAngle to turn to %.2f Degrees\n",GPS.heading(deg) + turn_step);
             Chassis.turn_to_angle(GPS.heading(deg) + turn_step);
             vex::wait(1,sec);
-            target = findTarget(CheckSide, CheckIso);
+            //target = findTarget(CheckSide, CheckIso);
         }
      
     }
@@ -324,8 +332,7 @@ void ScoreBall()
 
     while(HoldingBall)
     {
-        Chassis.drive_distance(10);
-        Intake.stop(coast);
+        Chassis.drive_distance(20);
         Chassis.drive_distance(-15);
         if(!Balldetect.isNearObject())
         {
@@ -339,6 +346,15 @@ void ScoreBall()
         Chassis.turn_to_angle(270);
     else
         Chassis.turn_to_angle(90);
-    
-    moveToPosition(-50,16.68125,-1,false);
+
+    //moveToPosition(-50,16.68125,-1,false);
 }
+
+#if defined(MANAGER_ROBOT)
+void test_func()
+{
+    Catapult.direction();
+
+}
+
+#endif

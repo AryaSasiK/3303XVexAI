@@ -90,20 +90,21 @@ public:
     pair<Point*,double> Score_Left;
     pair<Point*,double> Score_Right;
     Line* Score_Front;
+    Point HangPos;
 
     Field(bool isRed, double Robot_Width, double Intake_Offset);
     Point* Find_Scoring_Pos();
     bool Check_Barrier_Intersects(Point* point, Point* inPath, bool checkoffsets);
+    void Updtae_Intake_Zone();
     bool In_Goal_Zone(float Ball_x, float Ball_y);
     bool In_MatchLoad_Zone(float Ball_x, float Ball_y);
     bool In_Iso_Zone(float Ball_x, float Ball_y, bool check);
     bool In_Offensive_Zone(float Ball_x, float Ball_y, bool check);
     bool In_Front_Score_Zone();
-    bool Near_Intake_Zone(float Ball_x, float Ball_y);
+    bool Near_Intake(float Ball_x, float Ball_y);
     Path Create_Path_to_Target(Point* Current, Point* Target);
-    
- 
-    
+
+      
 };
 
 

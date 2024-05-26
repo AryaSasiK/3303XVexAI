@@ -8,6 +8,7 @@
 /*----------------------------------------------------------------------------*/
 
 #include "ai_functions.h"
+#include "robot-config.h"
 using namespace std;
 using namespace vex;
 
@@ -17,10 +18,20 @@ using namespace vex;
 // GPS Offsets (15in, 24in)
 // X(0,0), Y(-6.5in,8in), Z(9.875,11in), Heading(180,180)
 /////********************************************************/////
-#define  MANAGER_ROBOT    1
+
 /////*********STOP*************STOP*************STOP*********/////
 /////**DONT FORGET TO DEFINE OR COMMENT IN "robot-config.h"**/////
 /////********************************************************/////
+/////**********Red Side = true || Blue Side = false**********/////
+/////********************************************************/////
+#define  Alliance  false
+
+#if(Alliance)
+#pragma message("Selected Red Side")
+#else
+#pragma message("Selected Blue Side")
+#endif
+
 
 #if defined(MANAGER_ROBOT)
 #pragma message("building for the manager")
@@ -43,6 +54,7 @@ gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
 const int32_t InertialPort = PORT19;
 double Robot_x_Offset = 25.4;
 double Intake_Offset = 15;
+double wheel_size = 3.15;
 
 #else
 #pragma message("building for the worker")
@@ -64,6 +76,7 @@ gps GPS = gps(PORT3, 0.0, -146, mm, 180);
 const int32_t InertialPort = PORT16;
 double Robot_x_Offset = 20;
 double Intake_Offset = 8.0;
+double wheel_size = 3.25;
 #endif
 
 
@@ -74,31 +87,44 @@ ai::jetson  jetson_comms;// create instance of jetson class to receive location 
 
 //Universal Objects (Do not comment out)
 // Red Side = true || Blue Side = false
-Field field(false,Robot_x_Offset,Intake_Offset);
+Field field(Alliance,Robot_x_Offset,Intake_Offset);
 FILE *fp = fopen("/dev/serial2","wb");
 brain Brain;
 timer Match = timer();
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
-Drive Chassis(LeftDriveSmart,RightDriveSmart,InertialPort, 3.125, 0.6, 360);
+Drive Chassis(LeftDriveSmart,RightDriveSmart,InertialPort, wheel_size, 0.6, 360);
 motor_group Hang = motor_group(HangA, HangB);
+bool wait2hang = true;
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void tuned_constants()
 {
+  #if defined(MANAGER_ROBOT)
+
+  Chassis.set_turn_constants(12, 0.18, 0.018, 1.25, 15);
+  Chassis.set_drive_constants(12, 1.4, 0, 16, 0);
+  Chassis.set_heading_constants(6, .4, 0, 1, 0);
+  Chassis.set_swing_constants(12, .3, .001, 2, 15);
+  Chassis.set_drive_exit_conditions(1.5, 300, 5000);
+  Chassis.set_turn_exit_conditions(1, 300, 3000);
+  Chassis.set_swing_exit_conditions(1, 300, 3000);
+  #else
   Chassis.set_drive_constants(12, 1.5, 0, 10, 0);
   Chassis.set_heading_constants(6, .4, 0, 1, 0);
-  Chassis.set_turn_constants(12, 0.25, 0.0005, 1.25, 15);//Tuned
+  Chassis.set_turn_constants(12, 0.25, 0.0005, 1.25, 15);
   Chassis.set_swing_constants(12, .3, .001, 2, 15);
   Chassis.set_drive_exit_conditions(1.5, 300, 1500);
   Chassis.set_turn_exit_conditions(1, 300, 1000);
   Chassis.set_swing_exit_conditions(1, 300, 3000);
+  #endif
 }
 
 void pre_auton(void) 
 {
+  
   Balldetect.objectDetectThreshold(65);
   Intake.setVelocity(100,pct);
   tuned_constants();
@@ -147,15 +173,22 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
-  // moveToPosition(-50,16.68125,-1,false,75,75);
-  while(true)
-  {
-    if(getObject(true,false))
-    {
-      wait(500,msec);
-      ScoreBall();
-    }
-  }
+
+  //Chassis.set_heading(180);
+  // Chassis.drive_distance(48,180);
+  //Chassis.turn_max_voltage = 12 ; 
+  //Chassis.turn_to_angle(0);
+  // getObject(false,false);
+  // ScoreBall();
+  moveToPosition(0,158,90,false,75,75);
+  // while(true)
+  // {
+  //   if(getObject(true,false))
+  //   {
+  //     wait(500,msec);
+  //     ScoreBall();
+  //   }
+  // }
 } 
 
 /*---------------------------------------------------------------------------*/
@@ -168,9 +201,33 @@ void testing_tuning(void)
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
 
-void auto_Isolation(void) 
+
+
+int endGameTimer()
 {
- 
+  int time2hang = 55;
+  while(Match.time(vex::timeUnits::sec)< time2hang)
+  {
+    task::sleep(1000);
+  }
+  wait2hang = false;
+
+  return 0;
+}
+
+void auto_Isolation(void) 
+{ 
+  #if defined(MANAGER_ROBOT)
+
+  #else
+  while (true)
+  {
+    if(getObject(true,true))
+    {
+      ScoreBall();
+    }
+  }
+  #endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -185,7 +242,21 @@ void auto_Isolation(void)
 
 void auto_Interaction(void) 
 {
+  Match.clear();
+  task endgame(endGameTimer);
 
+  #if defined(MANAGER_ROBOT)
+
+  #else
+  while (wait2hang)
+  {
+    if(getObject(true,false))
+    {
+      ScoreBall();
+    }
+  }
+  #endif
+  
 }
 
 /*---------------------------------------------------------------------------*/
@@ -218,6 +289,7 @@ void autonomousMain(void)
 
 int main() {
 
+ 
   // local storage for latest data from the Jetson Nano
   static AI_RECORD       local_map;
   // Run at about 15Hz
@@ -228,6 +300,7 @@ int main() {
   // Set up callbacks for autonomous and driver control periods.
   Competition.drivercontrol(usercontrol);
   Competition.autonomous(testing_tuning);
+  //Match.event(testing_tuning,10);
   // Competition.autonomous(autonomousMain);
   this_thread::sleep_for(loop_time);
   int counter = 0 ;
@@ -241,6 +314,7 @@ int main() {
       counter += 1 ;
       if (counter > 15)
       {
+        //fprintf(fp,"\rTimer Value: %.1f\n",Match.time(vex::timeUnits::sec));
         //fprintf(fp,"\rLocal Map Pos Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
         //fprintf(fp,"\rGPS Pos Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
         counter = 0 ;

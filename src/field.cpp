@@ -59,7 +59,7 @@ static Line
     Blue_Right_Side(Blue_FR_Corner, Blue_BR_Corner); // Right Blue Line
 /////////////////////////////////////////////////////////////////////////////
 static double
-    Scoring_Ref_X = 84.1248,
+    Scoring_Ref_X = 58.7248,
     Scoring_Ref_Y = 29.3687,
     Nuetral_Y = 30.48,
     Scoring_Zone_X = 109.8296,
@@ -92,8 +92,6 @@ static Point
 static Point 
     Front_Red_1(Scoring_Zone_X,CenterBar_Y),
     Front_Red_2(Scoring_Zone_X,-CenterBar_Y),
-   
-    
     Front_Blue_1(-Scoring_Zone_X,CenterBar_Y),
     Front_Blue_2(-Scoring_Zone_X,-CenterBar_Y),
     Back_RB_1(0.00, CenterBar_Y),
@@ -123,6 +121,15 @@ static Point
     Q4_Goal_Zone(-Goal_Zone_XY, Goal_Zone_XY),
     Q4_Match_Load_Center(-Match_Load_Center_XY, Match_Load_Center_XY),
     Q4_Alley(-Match_Load_Ref_X, Match_Load_Ref_Y);
+
+//Hang Points
+double 
+    Vert_Hang_X = 103.308,
+    Hor_Hang_X = 0.00,
+    Hor_Hang_y = 158.308;
+
+
+
 
 
 
@@ -177,6 +184,13 @@ Field::Field(bool isRed, double Robot_Width, double Intake_Offset)
         Score_Left.second = 180.0;
         Score_Right.first = &R_Red_Score;
         Score_Right.second = 0.0;
+
+
+        #if defined(MANAGER_ROBOT)
+        HangPos = Point(Vert_Hang_X, Alley_Y);
+        #else
+        HangPos = Point(Hor_Hang_X, -Hor_Hang_y);
+        #endif
     }
     else 
     {
@@ -203,6 +217,12 @@ Field::Field(bool isRed, double Robot_Width, double Intake_Offset)
         Score_Left.second = 0.00;
         Score_Right.first = &R_Blue_Score;
         Score_Right.second = 180.0;
+        
+        #if defined(MANAGER_ROBOT)
+        HangPos = Point(-Vert_Hang_X, -Alley_Y);
+        #else
+        HangPos = Point(Hor_Hang_X, Hor_Hang_y);
+        #endif
     }
 
     Width_Offset = Robot_Width;
@@ -233,6 +253,7 @@ Field::Field(bool isRed, double Robot_Width, double Intake_Offset)
     ML_Zone.push_back(&Q1_Field_Corner);
     ML_Zone.push_back(&Match_LoadA);
     ML_Zone.push_back(&Match_LoadB);
+
 }
 
 
@@ -371,6 +392,26 @@ bool Field::Check_Barrier_Intersects(Point* point, Point* inPath, bool checkoffs
     return Intersect;
 }
 
+void Field::Updtae_Intake_Zone()
+{
+    Point Current(GPS.xPosition(vex::distanceUnits::cm), GPS.yPosition(vex::distanceUnits::cm));
+    Point* Intake_Off = Calc_Offest_Point();
+    //fprintf(fp,"")
+    Line Intake_OffsetA = FindOffsetLines(&Current, Intake_Off,true);
+    Line Intake_OffsetB = FindOffsetLines(&Current, Intake_Off,true);
+    Point A1 = Intake_OffsetA.LinePoints.first;
+    Point A2 = Intake_OffsetA.LinePoints.second;
+    Point B1 = Intake_OffsetA.LinePoints.first;
+    Point B2 = Intake_OffsetA.LinePoints.second;
+    Intake_Zone.clear();
+    Intake_Zone.push_back(&A1);
+    Intake_Zone.push_back(&A2);
+    Intake_Zone.push_back(&B2);
+    Intake_Zone.push_back(&B1);
+    fprintf(fp,"\rIntake Zone Points, A1:(%.2f, %.2f) A2:(%.2f, %.2f) || B1:(%.2f, %.2f) B2:(%.2f, %.2f)\n", A1.Xcord, A1.Ycord, A2.Xcord, A2.Ycord, B1.Xcord, B1.Ycord, B2.Xcord, B2.Ycord);
+
+}
+
 bool Inside_Polygon(float tar_x, float tar_y, vector <const Point*> Zone)
 {
     tar_x = tar_x * 100;
@@ -438,24 +479,8 @@ bool Field::In_Iso_Zone(float Ball_x, float Ball_y, bool check)
     return check;
 }
 
-bool Field::Near_Intake_Zone(float Ball_x, float Ball_y)
+bool Field::Near_Intake(float Ball_x, float Ball_y)
 {
-    Point Current(GPS.xPosition(vex::distanceUnits::cm), GPS.yPosition(vex::distanceUnits::cm));
-    Point* Intake_Off = Calc_Offest_Point();
-
-    Line Intake_OffsetA = FindOffsetLines(&Current, Intake_Off,true);
-    Line Intake_OffsetB = FindOffsetLines(&Current, Intake_Off,true);
-    Point A1 = Intake_OffsetA.LinePoints.first;
-    Point A2 = Intake_OffsetA.LinePoints.second;
-    Point B1 = Intake_OffsetA.LinePoints.first;
-    Point B2 = Intake_OffsetA.LinePoints.second;
-    Intake_Zone.clear();
-    Intake_Zone.push_back(&A1);
-    Intake_Zone.push_back(&A2);
-    Intake_Zone.push_back(&B1);
-    Intake_Zone.push_back(&B2);
-    
-
     return Inside_Polygon(Ball_x, Ball_y,Intake_Zone);
 }
 
@@ -519,33 +544,38 @@ Path Field::Create_Path_to_Target(Point* Current, Point* Target)
     StartIndex = getIndex(Start),
     EndIndex = getIndex(End);
 
+
     Path PathA; // Clockwise 
     PathA.PathPoints.push_back(Start);
-    for(int i = StartIndex; i != EndIndex ; i++)
+    for(int i = StartIndex + 1; i != EndIndex ; i++)
     {
+        PathA.PathPoints.push_back(Path2Snap2[i-1]);
         if (i == Path2Snap2.size())
         {
             i = 0;
         }
-        PathA.PathPoints.push_back(Path2Snap2[i]);
+        
     }
-    //PathA.PathPoints.push_back(End);
-    PathA.PathPoints.push_back(Target);
+    PathA.PathPoints.push_back(End);
     PathA.calcPathLength();
 
-    Path PathB; // Clockwise 
-    //PathB.PathPoints.push_back(Start);
-    for(int i = StartIndex - 1; i != EndIndex - 1  ; i--)
+
+    Path PathB; // Counter-Clockwise 
+    PathB.PathPoints.push_back(Start);
+    for(int i = StartIndex - 1; i != EndIndex  ; i--)
     {
-        PathB.PathPoints.push_back(Path2Snap2[i]);
         if (i == 0)
         {
             i = Path2Snap2.size();
         }
+        PathB.PathPoints.push_back(Path2Snap2[i-1]);
     }
     PathB.PathPoints.push_back(End);
-    PathB.PathPoints.push_back(Target);
     PathB.calcPathLength();
+
+
+
+
 
     if(PathA.pathlength < PathB.pathlength)
     {
@@ -561,11 +591,14 @@ Path Field::Create_Path_to_Target(Point* Current, Point* Target)
             DrivePath.PathPoints.push_back(PathB.PathPoints[i]);
         }
     }
-
-    // for(int i = 0; i < DrivePath.PathPoints.size(); i++)
-    // {
-    //     fprintf(fp,"\rPoint in Path:(%.2f, %.2f) ->\n", DrivePath.PathPoints[i]->Xcord, DrivePath.PathPoints[i]->Ycord);
-    // }
+    DrivePath.PathPoints.push_back(Target);
+    fprintf(fp,"\rFirst Point om Drive Path ||");
+    for(int i = 0; i < DrivePath.PathPoints.size() - 1; i++)
+    {
+        int tempIndex = getIndex(DrivePath.PathPoints[i]);
+        fprintf(fp,"\rPath Index: %i ->\n", tempIndex);
+    }
+    fprintf(fp,"\rTarget Point om Drive Path\n");
     return DrivePath;
 }
 
