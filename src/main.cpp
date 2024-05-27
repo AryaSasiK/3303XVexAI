@@ -103,18 +103,10 @@ motor Intake = motor(IntakePort, ratio6_1, true);
 
 void tuned_constants()
 {
-  // Chassis.set_drive_constants(12, 1.5, 0, 10, 0);//Not tuned, but working
-  // Chassis.set_heading_constants(6, .4, 0, 1, 0);
-  Chassis.set_turn_constants(12, 0.18, 0.018, 1.25, 15);//Tuned
-  // Chassis.set_swing_constants(12, .25, .015, 1.1, 15);//Tuned
-  // Chassis.set_drive_exit_conditions(1.5, 300, 2000);
-  // Chassis.set_turn_exit_conditions(1, 300, 2000);
-  // Chassis.set_swing_exit_conditions(1, 300, 1000);
-  Chassis.set_drive_constants(12, 1.4, 0, 16, 0);
+  
+  Chassis.set_turn_constants(12, 0.18, 0.018, 1.25, 15);//dont touch this, tuned
+  Chassis.set_drive_constants(12, 1.4, 0, 16, 0); //dont touch this, tuned
   Chassis.set_heading_constants(6, .4, 0, 1, 0);
-  // Chassis.set_turn_constants(12, 0.25, 0.0005, 1.25, 15);//Tuned
-    // Chassis.set_turn_constants(12, 0.05, 0, 0, 0);//Tuned
-
   Chassis.set_swing_constants(12, .3, .001, 2, 15);
   Chassis.set_drive_exit_conditions(1.5, 300, 5000);
   Chassis.set_turn_exit_conditions(1, 300, 3000);
