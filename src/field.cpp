@@ -556,7 +556,9 @@ Path Field::Create_Path_to_Target(Point* Current, Point* Target)
         }
         
     }
-    PathA.PathPoints.push_back(End);
+    if(Check_Barrier_Intersects(PathA.PathPoints.back(), Target, true)){
+        PathA.PathPoints.push_back(End);
+    }
     PathA.calcPathLength();
 
 
@@ -570,7 +572,9 @@ Path Field::Create_Path_to_Target(Point* Current, Point* Target)
         }
         PathB.PathPoints.push_back(Path2Snap2[i-1]);
     }
-    PathB.PathPoints.push_back(End);
+    if(Check_Barrier_Intersects(PathB.PathPoints.back(), Target, true)){
+        PathB.PathPoints.push_back(End);
+    }
     PathB.calcPathLength();
 
 
@@ -601,5 +605,3 @@ Path Field::Create_Path_to_Target(Point* Current, Point* Target)
     fprintf(fp,"\rTarget Point om Drive Path\n");
     return DrivePath;
 }
-
-

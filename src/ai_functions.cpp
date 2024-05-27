@@ -153,18 +153,18 @@ void moveToPosition(double target_x, double target_y, double target_theta = -1, 
             fprintf(fp, "\r-> (%.2f, %.2f)\n", Path2Follow.PathPoints[i]->Xcord, Path2Follow.PathPoints[i]->Xcord);
             if(!GetBall)
             {
-                //moveToPoint(Path2Follow.PathPoints[i]);
+                moveToPoint(Path2Follow.PathPoints[i]);
             }
 
             else
             {
                 if(i == Path2Follow.PathPoints.size() - 1)
                 {
-                    //MovetoBall(Path2Follow.PathPoints[i]);
+                    MovetoBall(Path2Follow.PathPoints[i]);
                 }
                 else
                 {
-                    //moveToPoint(Path2Follow.PathPoints[i]);
+                    moveToPoint(Path2Follow.PathPoints[i]);
                 }
             }
         }
