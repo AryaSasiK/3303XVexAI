@@ -90,10 +90,13 @@ public:
     pair<Point*,double> Score_Left;
     pair<Point*,double> Score_Right;
     Line* Score_Front;
-    Point HangPos;
+    Line* Drop_Line; 
+    Point* HangPos;
+    Point* ML_Point;
 
     Field(bool isRed, double Robot_Width, double Intake_Offset);
     Point* Find_Scoring_Pos();
+    Point* Find_Drop_Pos();
     bool Check_Barrier_Intersects(Point* point, Point* inPath, bool checkoffsets);
     void Updtae_Intake_Zone();
     bool In_Goal_Zone(float Ball_x, float Ball_y);

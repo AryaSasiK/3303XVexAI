@@ -46,15 +46,25 @@ motor rightDriveB = motor(PORT4, ratio6_1, false);
 motor rightDriveC = motor(PORT1, ratio6_1, false);
 motor rightDriveD = motor(PORT2, ratio6_1, false);
 motor Catapult = motor(PORT11,ratio36_1,true);
+rotation CatapultEnc = rotation(PORT16);
+limit CatapultLimit = limit(Brain.ThreeWirePort.D);
 optical Balldetect = optical(PORT14);
-motor Intake = motor(PORT11, ratio6_1, true);
+motor Intake = motor(PORT12, ratio6_1, true);
 motor HangA = motor(PORT13, ratio36_1, false);
 motor HangB = motor(PORT14, ratio36_1, true);
-gps GPS = gps(PORT20, 0.0, 203.2, mm, 180);
+rotation HangEnc = rotation(PORT5);
+gps GPS = gps(PORT20, 0.0, -163.4, mm, 180);
 const int32_t InertialPort = PORT19;
 double Robot_x_Offset = 25.4;
 double Intake_Offset = 15;
 double wheel_size = 3.15;
+digital_out R_Wing = digital_out(Brain.ThreeWirePort.C);
+digital_out L_Wing = digital_out(Brain.ThreeWirePort.E);
+digital_out  Hang_Ratchet = digital_out(Brain.ThreeWirePort.H);
+
+
+
+
 
 #else
 #pragma message("building for the worker")
@@ -77,6 +87,9 @@ const int32_t InertialPort = PORT16;
 double Robot_x_Offset = 20;
 double Intake_Offset = 8.0;
 double wheel_size = 3.25;
+digital_out R_Wing = digital_out(Brain.ThreeWirePort.C);
+digital_out L_Wing = digital_out(Brain.ThreeWirePort.E);
+digital_out  Hang_Ratchet = digital_out(Brain.ThreeWirePort.H);
 #endif
 
 
@@ -173,14 +186,16 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
-
+  GetMatchLoad();
+  Move2Drop_Pos();
   //Chassis.set_heading(180);
   // Chassis.drive_distance(48,180);
   //Chassis.turn_max_voltage = 12 ; 
   //Chassis.turn_to_angle(0);
   // getObject(false,false);
   // ScoreBall();
-  moveToPosition(0,158,90,false,75,75);
+  // moveToPosition(0,158,90,false,75,75);
+
   // while(true)
   // {
   //   if(getObject(true,false))
@@ -316,7 +331,7 @@ int main() {
       {
         //fprintf(fp,"\rTimer Value: %.1f\n",Match.time(vex::timeUnits::sec));
         //fprintf(fp,"\rLocal Map Pos Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
-        //fprintf(fp,"\rGPS Pos Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
+        fprintf(fp,"\rGPS Pos Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
         counter = 0 ;
       }
       // request new data    

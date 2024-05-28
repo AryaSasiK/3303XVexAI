@@ -15,7 +15,7 @@ extern Field field;
 // Calculates the distance to a given target (x, y)
 float distanceTo(double target_x, double target_y,vex::distanceUnits unit);
 double calculateBearing(double currX, double currY, double targetX, double targetY);
-void moveToPoint(Point* Target);
+void moveToPoint(Point* Target, bool FrontFacing);
 void MovetoBall(Point* Target);
 // Moves the robot to a specified position and orientation
 void moveToPosition(double target_x, double target_y, double target_theta, bool frontfacing, int Dspeed, int Tspeed);
@@ -25,3 +25,9 @@ bool CheckBallColor();
 // Retrieves an object (e.g. from the ground or a dispenser)
 bool getObject(bool CheckSide, bool CheckIso);
 void ScoreBall();
+#if defined(MANAGER_ROBOT)
+bool GetMatchLoad();
+void Move2Drop_Pos();
+void ThrowBall();
+void BlockIntake();
+#endif

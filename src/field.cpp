@@ -123,12 +123,24 @@ static Point
     Q4_Alley(-Match_Load_Ref_X, Match_Load_Ref_Y);
 
 //Hang Points
-double 
+static double 
     Vert_Hang_X = 103.308,
     Hor_Hang_X = 0.00,
     Hor_Hang_y = 158.308;
 
+static double
+    Drop_Off_X = 45.00,
+    Drop_Off_Y = 45.00;
 
+static Point
+    Red_Drop_A(Drop_Off_X,Drop_Off_Y),
+    Red_Drop_B(Drop_Off_X, -Drop_Off_Y),
+    Blue_Drop_A(-Drop_Off_X, Drop_Off_Y),
+    Blue_Drop_B(-Drop_Off_X,-Drop_Off_Y);
+
+static Line
+    Red_Drop(Red_Drop_A,Red_Drop_B),
+    Blue_Drop(Blue_Drop_A,Blue_Drop_B);
 
 
 
@@ -185,11 +197,13 @@ Field::Field(bool isRed, double Robot_Width, double Intake_Offset)
         Score_Right.first = &R_Red_Score;
         Score_Right.second = 0.0;
 
+        Drop_Line = &Blue_Drop;
+        ML_Point = &Q3_Match_Load_Center;
 
         #if defined(MANAGER_ROBOT)
-        HangPos = Point(Vert_Hang_X, Alley_Y);
+        HangPos = new Point(Vert_Hang_X, Alley_Y);
         #else
-        HangPos = Point(Hor_Hang_X, -Hor_Hang_y);
+        HangPos = new Point(Hor_Hang_X, -Hor_Hang_y);
         #endif
     }
     else 
@@ -217,11 +231,14 @@ Field::Field(bool isRed, double Robot_Width, double Intake_Offset)
         Score_Left.second = 0.00;
         Score_Right.first = &R_Blue_Score;
         Score_Right.second = 180.0;
-        
+
+        Drop_Line = &Red_Drop;
+        ML_Point = &Q1_Match_Load_Center;
+
         #if defined(MANAGER_ROBOT)
-        HangPos = Point(-Vert_Hang_X, -Alley_Y);
+        HangPos = new Point(-Vert_Hang_X, -Alley_Y);
         #else
-        HangPos = Point(Hor_Hang_X, Hor_Hang_y);
+        HangPos = new Point(Hor_Hang_X, Hor_Hang_y);
         #endif
     }
 
@@ -254,9 +271,44 @@ Field::Field(bool isRed, double Robot_Width, double Intake_Offset)
     ML_Zone.push_back(&Match_LoadA);
     ML_Zone.push_back(&Match_LoadB);
 
+
+
 }
 
+Point* Field::Find_Drop_Pos()
+{
+    Point* PoL;
+    double
+        Ax = Drop_Line->LinePoints.first.Xcord,
+        Ay = Drop_Line->LinePoints.first.Ycord,
+        Bx = Drop_Line->LinePoints.second.Xcord,
+        By = Drop_Line->LinePoints.second.Ycord,
+        Pointx = GPS.xPosition(vex::distanceUnits::cm),
+        Pointy = GPS.yPosition(vex::distanceUnits::cm);
+    // fprintf(fp,"Line Seg Point A (%.2f, %.2f), Point B (%.2f, %.2f), Point C(%.2f, %.2f)",Ax,Ay,Bx,By,Pointx,Pointy);
+    double Px = Bx - Ax;
+    double Py = By - Ay;
+    double temp = (Px * Px) + (Py * Py);
+    double U = ((Pointx - Ax) * Px + (Pointy - Ay) * Py) / (temp);
+    if (U > 1)
+    {
+        U = 1;
+    }
+    else if (U < 0)
+    {
+        U = 0;
+    }
+    double X = Ax + U * Px;
+    double Y = Ay + U * Py;
+    // double Dx = X - Pointx;
+    // double Dy = Y - Pointy;
+    //double Dist = sqrt((Dx * Dx) + (Dy * Dy));
+   
+    PoL = new Point(X, Y);
+    //fprintf(fp,"\rPoint on Line:(%.2f, %.2f) Distance:\n",X, Y);
 
+    return PoL;
+}
 
 Point* Field::Find_Scoring_Pos()
 {
@@ -538,8 +590,8 @@ Path Field::Create_Path_to_Target(Point* Current, Point* Target)
     Point* Start = Find_Point_on_Path(Current);
     Point* End = Find_Point_on_Path(Target);
     fprintf(fp, "\rCurrent Pos: (%.2f, %.2f) - > Target Pos: (%.2f, %.2f)\n", Current->Xcord, Current->Ycord, Target->Xcord, Target->Ycord);
-    // fprintf(fp, "\rFirst point to drive to is (%.2f, %.2f)\n", Start->Xcord, Start->Ycord);
-    // fprintf(fp, "\rLast point before target (%.2f, %.2f)\n", End->Xcord, End->Ycord);
+    fprintf(fp, "\rFirst point to drive to is (%.2f, %.2f)\n", Start->Xcord, Start->Ycord);
+    fprintf(fp, "\rLast point before target (%.2f, %.2f)\n", End->Xcord, End->Ycord);
     int 
     StartIndex = getIndex(Start),
     EndIndex = getIndex(End);
@@ -578,9 +630,6 @@ Path Field::Create_Path_to_Target(Point* Current, Point* Target)
     PathB.calcPathLength();
 
 
-
-
-
     if(PathA.pathlength < PathB.pathlength)
     {
         for(int i = 0; i < PathA.PathPoints.size(); i++)
@@ -596,7 +645,7 @@ Path Field::Create_Path_to_Target(Point* Current, Point* Target)
         }
     }
     DrivePath.PathPoints.push_back(Target);
-    fprintf(fp,"\rFirst Point om Drive Path ||");
+    fprintf(fp,"\rFirst Point om Drive Path\n");
     for(int i = 0; i < DrivePath.PathPoints.size() - 1; i++)
     {
         int tempIndex = getIndex(DrivePath.PathPoints[i]);

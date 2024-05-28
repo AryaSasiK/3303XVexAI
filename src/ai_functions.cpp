@@ -68,9 +68,9 @@ double calculateBearing(double currX, double currY, double targetX, double targe
 }
 
 
-void moveToPoint(Point* Target)
+void moveToPoint(Point* Target, bool FrontFacing = true)
 {   
-    float ThresholdRad = 25.4; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
+    float ThresholdRad = 12; // represnts the radius (cm) of the current postion if target point lies within the circle then move to postion function will end
     bool arrived2Target = false;
     
   
@@ -90,7 +90,7 @@ void moveToPoint(Point* Target)
         double diff = fabs(GPS.heading(vex::rotationUnits::deg) - intialHeading);
         double result = (diff <= 180.0) ? diff : 360.0 - diff;
 
-        if(result > 90)
+        if((result > 90))
         {
             intialHeading +=  180;
         }
@@ -99,7 +99,7 @@ void moveToPoint(Point* Target)
         //Drive Function
         Chassis.desired_heading = intialHeading;
         float distance = distanceTo(Target->Xcord, Target->Ycord);
-        if(result > 90)
+        if((result > 90))
         {
             distance = distance * -1;
         }
@@ -326,14 +326,14 @@ void ScoreBall()
     }
     
     fprintf(fp,"\rGoing to scoring point (%.2f, %.2f)\n",Scoring_Point->Xcord, Scoring_Point->Ycord);
-    moveToPosition(Scoring_Point->Xcord,Scoring_Point->Ycord,Scoring_Dir);
-    Intake.spin(vex::directionType::rev);
+    
     vex::wait(500,msec);
 
     while(HoldingBall)
     {
+        moveToPosition(Scoring_Point->Xcord,Scoring_Point->Ycord,Scoring_Dir);
+        Intake.spin(vex::directionType::rev);
         Chassis.drive_distance(20);
-        Chassis.drive_distance(-15);
         if(!Balldetect.isNearObject())
         {
             fprintf(fp,"\rThe robot is not holding a Triball\n");
@@ -351,10 +351,81 @@ void ScoreBall()
 }
 
 #if defined(MANAGER_ROBOT)
-void test_func()
+bool GetMatchLoad()
 {
-    Catapult.direction();
+    bool HoldingBall = false;
+    double theta;
+    if(field.Blue_Side)
+    {
+        theta = 45.00;
+    }
+    else if(field.Red_Side)
+    {   
+        theta = 225.0;
+    }
+    while(!HoldingBall)
+    {
+
+        if(Balldetect.isNearObject() && CheckBallColor())
+        {
+            fprintf(fp,"\rThe robot is holding a Triball\n");
+            Intake.stop(hold);
+            HoldingBall = true;
+        } 
+        moveToPosition(field.ML_Point->Xcord,field.ML_Point->Ycord,theta,false,100,100);
+        Intake.spin(vex::directionType::fwd);
+        Chassis.drive_distance(10);
+        wait(500,msec);
+
+    }
+    
+    return HoldingBall;
+
+
 
 }
+void Move2Drop_Pos()
+{
+bool HoldingBall = true; 
+    double theta;
+    if(field.Blue_Side)
+        theta = 90.00; 
+    else if(field.Red_Side)
+        theta = 270.00;
 
+    Point* DropPoint = field.Find_Drop_Pos();
+    fprintf(fp,"\rTravelling to Drop Off Pos (%.2f, %.2f)\n",DropPoint->Xcord, DropPoint->Ycord);
+    while(HoldingBall)
+    {
+        moveToPosition(DropPoint->Xcord,DropPoint->Ycord, 270,false,100,100);
+        Chassis.drive_distance(15.00);
+        Intake.spin(vex::directionType::rev);
+        if(!Balldetect.isNearObject())
+        {
+            fprintf(fp,"\rThe robot is not holding a Triball\n");
+            Intake.stop();
+            HoldingBall = false;
+        }
+    }
+}
+
+void ThrowBall()
+{
+    if(CatapultLimit.pressing())
+    {
+        Catapult.spinFor(vex::directionType::fwd, 10 ,vex::rotationUnits::rev);
+    }
+
+    Catapult.spin(vex::directionType::fwd);
+    while(!CatapultLimit.pressing())
+    {
+        wait(100,msec);
+    }
+    Catapult.stop(hold);
+}
+
+void BlockIntake()
+{
+
+}
 #endif
