@@ -199,7 +199,7 @@ DETECTION_OBJECT findTarget(bool CheckSide = true, bool CheckIso = false)
             {
                 if(field.In_Iso_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y,CheckIso))
                 {
-                    if(local_map.detections[i].classID == 0 || Ball_Color )
+                    if(local_map.detections[i].classID == 0 )
                     {
                         if(!field.Near_Intake(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
                         {
@@ -333,7 +333,7 @@ void ScoreBall()
     {
         moveToPosition(Scoring_Point->Xcord,Scoring_Point->Ycord,Scoring_Dir);
         Intake.spin(vex::directionType::rev);
-        Chassis.drive_distance(20);
+        Chassis.drive_distance(10);
         if(!Balldetect.isNearObject())
         {
             fprintf(fp,"\rThe robot is not holding a Triball\n");
@@ -341,7 +341,7 @@ void ScoreBall()
             HoldingBall = false;
         }
     }
-
+    moveToPosition(Scoring_Point->Xcord,Scoring_Point->Ycord,Scoring_Dir);
     if(field.Red_Side)
         Chassis.turn_to_angle(270);
     else
@@ -415,11 +415,11 @@ void ThrowBall()
     {
         Catapult.spinFor(vex::directionType::fwd, 10 ,vex::rotationUnits::rev);
     }
-
+    Catapult.setVelocity(25,pct);
     Catapult.spin(vex::directionType::fwd);
     while(!CatapultLimit.pressing())
     {
-        wait(100,msec);
+        wait(10,msec);
     }
     Catapult.stop(hold);
 }

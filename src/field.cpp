@@ -453,8 +453,8 @@ void Field::Updtae_Intake_Zone()
     Line Intake_OffsetB = FindOffsetLines(&Current, Intake_Off,true);
     Point A1 = Intake_OffsetA.LinePoints.first;
     Point A2 = Intake_OffsetA.LinePoints.second;
-    Point B1 = Intake_OffsetA.LinePoints.first;
-    Point B2 = Intake_OffsetA.LinePoints.second;
+    Point B1 = Intake_OffsetB.LinePoints.first;
+    Point B2 = Intake_OffsetB.LinePoints.second;
     Intake_Zone.clear();
     Intake_Zone.push_back(&A1);
     Intake_Zone.push_back(&A2);
@@ -654,3 +654,4 @@ Path Field::Create_Path_to_Target(Point* Current, Point* Target)
     fprintf(fp,"\rTarget Point om Drive Path\n");
     return DrivePath;
 }
+

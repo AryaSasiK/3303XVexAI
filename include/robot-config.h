@@ -13,7 +13,7 @@ extern digital_out Hang_Ratchet;
 extern controller Controller;
 extern FILE* fp;
 
-#define  MANAGER_ROBOT  1
+//#define  MANAGER_ROBOT  1
 
 #if defined(MANAGER_ROBOT)
 extern motor Catapult;

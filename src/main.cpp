@@ -18,7 +18,7 @@ using namespace vex;
 // GPS Offsets (15in, 24in)
 // X(0,0), Y(-6.5in,8in), Z(9.875,11in), Heading(180,180)
 /////********************************************************/////
-
+brain Brain;
 /////*********STOP*************STOP*************STOP*********/////
 /////**DONT FORGET TO DEFINE OR COMMENT IN "robot-config.h"**/////
 /////********************************************************/////
@@ -45,7 +45,7 @@ motor rightDriveA = motor(PORT3, ratio6_1, false);
 motor rightDriveB = motor(PORT4, ratio6_1, false);
 motor rightDriveC = motor(PORT1, ratio6_1, false);
 motor rightDriveD = motor(PORT2, ratio6_1, false);
-motor Catapult = motor(PORT11,ratio36_1,true);
+motor Catapult = motor(PORT11,ratio36_1,false);
 rotation CatapultEnc = rotation(PORT16);
 limit CatapultLimit = limit(Brain.ThreeWirePort.D);
 optical Balldetect = optical(PORT14);
@@ -76,12 +76,12 @@ motor leftDriveC = motor(PORT19, ratio6_1, false);
 motor leftDriveD = motor(PORT9, ratio6_1, false);   
 motor rightDriveA = motor(PORT12, ratio6_1, false);
 motor rightDriveB = motor(PORT2, ratio6_1, false);
-motor rightDriveC = motor(PORT7, ratio6_1, true);
+motor rightDriveC = motor(PORT13, ratio6_1, true);
 motor rightDriveD = motor(PORT4, ratio6_1, true);
 optical Balldetect = optical(PORT14);
 motor Intake = motor(PORT11, ratio6_1, true);
-motor HangA = motor(PORT15, ratio36_1, false);
-motor HangB = motor(PORT13, ratio36_1, true);
+motor HangA = motor(PORT1, ratio36_1, false);
+motor HangB = motor(PORT6, ratio36_1, true);
 gps GPS = gps(PORT3, 0.0, -146, mm, 180);
 const int32_t InertialPort = PORT16;
 double Robot_x_Offset = 20;
@@ -102,7 +102,7 @@ ai::jetson  jetson_comms;// create instance of jetson class to receive location 
 // Red Side = true || Blue Side = false
 Field field(Alliance,Robot_x_Offset,Intake_Offset);
 FILE *fp = fopen("/dev/serial2","wb");
-brain Brain;
+
 timer Match = timer();
 motor_group LeftDriveSmart = motor_group(leftDriveA, leftDriveB, leftDriveC, leftDriveD);
 motor_group RightDriveSmart = motor_group(rightDriveA, rightDriveB, rightDriveC,rightDriveD);
@@ -186,8 +186,18 @@ void usercontrol(void)
 
 void testing_tuning(void)
 {
-  GetMatchLoad();
-  Move2Drop_Pos();
+
+ while (true)
+  {
+    if(getObject(true,false))
+    {
+      ScoreBall();
+    }
+  }
+  //ThrowBall();
+
+  // GetMatchLoad();
+  // Move2Drop_Pos();
   //Chassis.set_heading(180);
   // Chassis.drive_distance(48,180);
   //Chassis.turn_max_voltage = 12 ; 
@@ -237,7 +247,7 @@ void auto_Isolation(void)
   #else
   while (true)
   {
-    if(getObject(true,true))
+    if(getObject(true,false))
     {
       ScoreBall();
     }
@@ -316,7 +326,7 @@ int main() {
   Competition.drivercontrol(usercontrol);
   Competition.autonomous(testing_tuning);
   //Match.event(testing_tuning,10);
-  // Competition.autonomous(autonomousMain);
+  //Competition.autonomous(autonomousMain);
   this_thread::sleep_for(loop_time);
   int counter = 0 ;
   while(1) 
@@ -331,7 +341,7 @@ int main() {
       {
         //fprintf(fp,"\rTimer Value: %.1f\n",Match.time(vex::timeUnits::sec));
         //fprintf(fp,"\rLocal Map Pos Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",local_map.pos.az,local_map.pos.x*100,local_map.pos.y*100);
-        fprintf(fp,"\rGPS Pos Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
+        //fprintf(fp,"\rGPS Pos Data || Azimuth:%.2f Degrees X:%.2f cm Y:%.2f cm\n",GPS.heading(vex::rotationUnits::deg), GPS.xPosition(vex::distanceUnits::cm),GPS.yPosition(vex::distanceUnits::cm));
         counter = 0 ;
       }
       // request new data    
