@@ -197,8 +197,8 @@ DETECTION_OBJECT findTarget(bool CheckSide = true, bool CheckIso = false)
         {
             if(field.In_Offensive_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y,CheckSide))
             {
-                if(field.In_Iso_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y,CheckIso))
-                {
+                // if(field.In_Iso_Zone(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y,CheckIso))
+                // {
                     if(local_map.detections[i].classID == 0 )
                     {
                         if(!field.Near_Intake(local_map.detections[i].mapLocation.x, local_map.detections[i].mapLocation.y))
@@ -219,7 +219,7 @@ DETECTION_OBJECT findTarget(bool CheckSide = true, bool CheckIso = false)
                             }
                         }
                     }
-                }
+                // }
             }
         }
     }  

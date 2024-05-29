@@ -158,11 +158,13 @@ void Path::calcPathLength()
 {
     double CalcDist;
     pathlength = 0; 
+    fprintf(fp,"\rBefore we are Calculating a Path Length\n");
     for (int i = 0; i < PathPoints.size() - 1; i++)
     {
         CalcDist =  distanceTo(PathPoints[i], PathPoints[i + 1]);
         pathlength += CalcDist;
     }
+    fprintf(fp,"\rCalculating a Path Length\n");
 
 }
 

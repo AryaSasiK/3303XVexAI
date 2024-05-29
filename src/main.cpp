@@ -24,7 +24,7 @@ brain Brain;
 /////********************************************************/////
 /////**********Red Side = true || Blue Side = false**********/////
 /////********************************************************/////
-#define  Alliance  false
+#define  Alliance  true
 
 #if(Alliance)
 #pragma message("Selected Red Side")
@@ -49,14 +49,14 @@ motor Catapult = motor(PORT11,ratio36_1,false);
 rotation CatapultEnc = rotation(PORT16);
 limit CatapultLimit = limit(Brain.ThreeWirePort.D);
 optical Balldetect = optical(PORT14);
-motor Intake = motor(PORT12, ratio6_1, true);
+motor Intake = motor(PORT12, ratio6_1, false);
 motor HangA = motor(PORT13, ratio36_1, false);
 motor HangB = motor(PORT14, ratio36_1, true);
 rotation HangEnc = rotation(PORT5);
 gps GPS = gps(PORT20, 0.0, -163.4, mm, 180);
 const int32_t InertialPort = PORT19;
 double Robot_x_Offset = 25.4;
-double Intake_Offset = 15;
+double Intake_Offset = 5;
 double wheel_size = 3.15;
 digital_out R_Wing = digital_out(Brain.ThreeWirePort.C);
 digital_out L_Wing = digital_out(Brain.ThreeWirePort.E);
